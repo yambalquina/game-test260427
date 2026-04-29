@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>立体機動装置 Prototype 3D 射出元補正ワイヤー版</title>
+<title>立体機動装置 Prototype 3D 非A時ワイヤー物理OFF版</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -665,7 +665,7 @@ function shootWire(side,sx,sy){
 
   // 見た目は腰から射出、物理はキャラ中心で扱う。
   // そのズレを補正した中心基準の初期ワイヤー長。
-  w.length=player.pos.distanceTo(centerEquivalentPoint)+35;
+  w.length=player.pos.distanceTo(centerEquivalentPoint);
 }
 document.getElementById('tapLayer').addEventListener('pointerdown',e=>{if(e.target.id!=='tapLayer')return;e.preventDefault();shootWire(e.clientX<innerWidth/2?'left':'right',e.clientX,e.clientY)},{passive:false});
 function collide(){const radius=28;player.grounded=false;if(player.pos.y<60){player.pos.y=60;if(player.vel.y<0)player.vel.y=0;player.grounded=true}for(const b of solids){if(player.pos.y>b.h+80)continue;const insideX=player.pos.x>b.x-radius&&player.pos.x<b.x+b.w+radius,insideZ=player.pos.z>b.z-radius&&player.pos.z<b.z+b.d+radius;if(insideX&&insideZ&&player.pos.y<b.h+70){const left=Math.abs(player.pos.x-(b.x-radius)),right=Math.abs(player.pos.x-(b.x+b.w+radius)),front=Math.abs(player.pos.z-(b.z-radius)),back=Math.abs(player.pos.z-(b.z+b.d+radius)),min=Math.min(left,right,front,back);if(min===left){player.pos.x=b.x-radius;player.vel.x*=.25}else if(min===right){player.pos.x=b.x+b.w+radius;player.vel.x*=.25}else if(min===front){player.pos.z=b.z-radius;player.vel.z*=.25}else{player.pos.z=b.z+b.d+radius;player.vel.z*=.25}}if(player.pos.x>b.x-radius&&player.pos.x<b.x+b.w+radius&&player.pos.z>b.z-radius&&player.pos.z<b.z+b.d+radius&&player.pos.y<b.h+60&&player.pos.y>b.h-30&&player.vel.y<=0){player.pos.y=b.h+60;player.vel.y=0;player.grounded=true}}}
@@ -681,50 +681,40 @@ function applyWire(w,dt){
 
   if(!input.reel){
     // Aを押していない時:
-    // ワイヤーは「刺さっているだけ」。
-    // 位置補正もアンカー方向加速も行わない。
-    // 初期ワイヤー長は射出元補正済みなので、勝手に引っ張られにくい。
-    w.length=Math.max(w.length,dist+20);
-
-    // 極端に伸びた時だけ、暴走防止として外向き速度を軽く減らす。
-    if(dist>w.length+220){
-      const radial=player.vel.dot(n);
-      if(radial>0){
-        player.vel.addScaledVector(n,-radial*0.06);
-      }
-    }
+    // 完全に物理無効。ゴム感・張力・速度抑制・位置補正を全部停止。
+    // 見た目のワイヤー線だけ残す。
     return;
   }
 
   // Aを押している時だけ巻き取り。
-  const elasticAllowance=Math.min(75,speed*1.05);
-  const reelSpeed=24+Math.min(72,dist*.04);
+  const elasticAllowance=Math.min(55,speed*0.75);
+  const reelSpeed=26+Math.min(78,dist*.045);
   w.length=Math.max(60,w.length-reelSpeed);
 
-  const effectiveLength=w.length+elasticAllowance*.18;
+  const effectiveLength=w.length+elasticAllowance*.12;
 
   if(dist>effectiveLength){
     const excess=dist-effectiveLength;
 
-    player.pos.addScaledVector(n,-excess*.76);
+    player.pos.addScaledVector(n,-excess*.78);
 
     const radial=player.vel.dot(n);
     if(radial>0){
-      player.vel.addScaledVector(n,-radial*.86);
+      player.vel.addScaledVector(n,-radial*.88);
     }
 
-    const tension=36+Math.min(86,excess*.32);
+    const tension=38+Math.min(90,excess*.34);
     player.vel.addScaledVector(n,-tension*dt*60);
 
     const tangent=player.vel.clone().addScaledVector(n,-player.vel.dot(n));
     const tLen=tangent.length();
     if(tLen>0.1){
-      player.vel.addScaledVector(tangent.normalize(),Math.min(1.25,tLen*.016));
+      player.vel.addScaledVector(tangent.normalize(),Math.min(1.15,tLen*.014));
     }
   }
 
   // A中だけアンカー方向へ吸わせる
-  const pull=13+Math.min(42,dist*.02);
+  const pull=14+Math.min(44,dist*.022);
   player.vel.addScaledVector(n,-pull*dt*60);
 }
 
