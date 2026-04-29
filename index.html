@@ -2,2038 +2,955 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>立体機動装置 Prototype 黒枠内フィット版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>立体機動装置 Prototype 3D A踏み切り巻き取り版</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-body{
-overflow:hidden;
-background:#000;
-touch-action:none;
---doc-top-safe:58px;
---doc-bottom-safe:76px;
---game-top:var(--doc-top-safe);
---game-bottom:var(--doc-bottom-safe);
-}
-canvas{display:block}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:none;user-select:none;-webkit-user-select:none}
+#game{position:fixed;inset:0;width:100vw;height:100vh;display:block;background:#000}
+#tapLayer{position:fixed;inset:0;z-index:5;background:transparent;touch-action:none}.hud{position:fixed;top:14px;right:14px;z-index:20;background:rgba(0,0,0,.42);color:#fff;border-radius:12px;padding:9px 11px;font-size:12px;line-height:1.55;text-align:right;backdrop-filter:blur(5px);min-width:120px}.system{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:25;display:flex;gap:8px}.system button,.mode button{border:none;background:rgba(255,255,255,.82);border-radius:12px;padding:8px 11px;font-weight:700;font-size:13px;box-shadow:0 8px 18px rgba(0,0,0,.16)}.mode{position:fixed;top:14px;left:14px;z-index:25}.ui{position:fixed;left:8vw;right:8vw;bottom:34px;z-index:20;display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none}.ui>*{pointer-events:auto}.dpad{display:grid;grid-template-columns:58px 58px 58px;grid-template-rows:58px 58px 58px;gap:8px}.btn{border:none;background:rgba(255,255,255,.70);color:#111;border-radius:16px;font-weight:800;font-size:22px;box-shadow:0 8px 18px rgba(0,0,0,.14);touch-action:none}.btn:active{transform:scale(.97)}.actionArea{display:flex;flex-direction:column;gap:10px}.action{width:78px;height:78px;border-radius:50%}.crosshair{position:fixed;left:50%;top:50%;width:24px;height:24px;margin-left:-12px;margin-top:-12px;z-index:18;pointer-events:none}.crosshair::before,.crosshair::after{content:"";position:absolute;background:rgba(0,0,0,.85);border-radius:2px}.crosshair::before{width:24px;height:2px;top:11px;left:0}.crosshair::after{width:2px;height:24px;left:11px;top:0}.clear{position:fixed;left:50%;top:48%;transform:translate(-50%,-50%);z-index:40;color:#fff;font-size:48px;font-weight:900;text-shadow:0 0 20px rgba(0,0,0,.7);display:none;text-align:center}.notice{position:fixed;left:50%;bottom:132px;transform:translateX(-50%);z-index:19;background:rgba(0,0,0,.36);color:#fff;border-radius:999px;padding:7px 12px;font-size:11px;backdrop-filter:blur(5px)}body.auto .dpad{display:none}body.auto .ui{justify-content:flex-end}
 
-#game{
-position:fixed;
-background:#000;
-transform-origin:top left;
-}
-
-#tapShield{
-position:fixed;
-z-index:20;
-touch-action:none;
-background:transparent;
+#loadStatus{
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index:100;
+  background:rgba(0,0,0,.65);
+  color:#fff;
+  padding:12px 16px;
+  border-radius:12px;
+  font-size:13px;
+  line-height:1.5;
+  text-align:center;
+  pointer-events:none;
 }
 
-#minimap,
-#fullMap{
-position:static !important;
-inset:auto !important;
-display:block;
-background:#f5f5f5;
-}
+.notice{display:none!important;}
 
-#toggleInfo{
-position:fixed;top:64px;left:18px;z-index:50;
-border:none;background:rgba(20,20,20,.55);color:#fff;border-radius:12px;
-padding:8px 12px;font-size:13px;font-weight:700;backdrop-filter:blur(4px)
-}
-.info{
-position:fixed;top:52px;left:12px;z-index:30;display:none;
-background:rgba(20,20,20,.48);color:#fff;padding:12px 14px;border-radius:14px;
-line-height:1.55;font-size:12px;max-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.18);
-backdrop-filter:blur(5px)
-}
-.info .title{font-weight:700;margin-bottom:4px}
-
-.hud{
-position:fixed;top:64px;right:18px;z-index:30;
-background:rgba(20,20,20,.38);color:#fff;padding:8px 10px;border-radius:12px;
-font-size:12px;line-height:1.5;min-width:120px;text-align:right;
-backdrop-filter:blur(5px)
-}
-.small{opacity:.8}
-
-.crosshair{
-position:fixed;top:50%;left:50%;width:24px;height:24px;
-margin-left:-12px;margin-top:-12px;pointer-events:none;z-index:25
-}
-.crosshair:before,.crosshair:after{content:"";position:absolute;background:rgba(0,0,0,.85);border-radius:2px}
-.crosshair:before{width:24px;height:2px;top:11px;left:0}
-.crosshair:after{width:2px;height:24px;left:11px;top:0}
-
-.clear{
-position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-font-size:52px;font-weight:800;color:#fff;text-shadow:0 0 18px rgba(0,0,0,.55);
-display:none;z-index:40
-}
-
-.ui{
-position:fixed;
-left:10vw;
-right:10vw;
-bottom:76px;
-display:flex;
-justify-content:space-between;
-align-items:flex-end;
-z-index:35;
-pointer-events:none
-}
-.ui>*{pointer-events:auto}
-.dpad{display:grid;grid-template-columns:64px 64px 64px;grid-template-rows:64px 64px 64px;gap:8px}
-.btn{
-border:none;background:rgba(255,255,255,.68);border-radius:16px;
-font-size:22px;font-weight:700;box-shadow:0 8px 18px rgba(0,0,0,.12);
-user-select:none;-webkit-user-select:none;color:#111
-}
-.btn:active{transform:scale(.98)}
-.actionArea{display:flex;flex-direction:column;gap:10px}
-.action{width:78px;height:78px;border-radius:50%}
-
-.tapHint{
-position:fixed;left:50%;bottom:112px;transform:translateX(-50%);
-background:rgba(0,0,0,.28);color:#fff;padding:7px 11px;border-radius:999px;
-font-size:11px;z-index:28;backdrop-filter:blur(4px)
-}
-
-.minimap{
-position:fixed;right:18px;top:172px;z-index:34;
-width:112px;height:112px;background:rgba(255,255,255,.78);
-border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:7px
-}
-.minimap canvas{
-width:100%;
-height:100%;
-display:block;
-border-radius:10px;
-background:#f5f5f5;
-position:static !important;
-}
-
-
-.systemBtns{
-position:fixed;
-left:50%;
-top:64px;
-transform:translateX(-50%);
-z-index:37;
-display:flex;
-flex-direction:row;
-gap:8px;
-align-items:center;
-}
-.systemBtns button{
-border:none;background:rgba(255,255,255,.82);border-radius:12px;
-padding:8px 12px;font-size:13px;font-weight:700;box-shadow:0 8px 18px rgba(0,0,0,.14)
-}
-
-.mapBtn{
-position:fixed;right:18px;top:294px;z-index:36;
-border:none;background:rgba(255,255,255,.82);border-radius:12px;
-padding:8px 12px;font-size:13px;font-weight:700;box-shadow:0 8px 18px rgba(0,0,0,.14)
-}
-.mapOverlay{
-position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);
-display:none;align-items:center;justify-content:center;padding:24px
-}
-.mapPanel{
-width:min(92vw,900px);height:min(86vh,900px);background:#fff;border-radius:18px;
-box-shadow:0 16px 40px rgba(0,0,0,.25);padding:16px;display:flex;flex-direction:column;gap:12px
-}
-.mapPanelHeader{
-display:flex;justify-content:space-between;align-items:center;font-weight:700
-}
-.mapPanel canvas{
-width:100%;
-height:auto;
-aspect-ratio:1/1;
-max-height:calc(86vh - 80px);
-display:block;
-background:#f5f5f5;
-border-radius:14px;
-object-fit:contain;
-position:static !important;
-}
-.closeMap{
-border:none;background:#111;color:#fff;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:700
-}
-
-body.auto-camera .dpad{display:none !important;}
-body.auto-camera .ui{
-  justify-content:flex-end;
-}
-body.auto-camera .actionArea{
-  margin-right:0;
-}
-@media (max-width: 700px){
-  .info{font-size:11px;max-width:220px}
-  .dpad{grid-template-columns:58px 58px 58px;grid-template-rows:58px 58px 58px}
-  .action{width:74px;height:74px}
-  .minimap{width:100px;height:100px}
-}
-
-.info,
-.tapHint{
+.notice{
   display:none !important;
-}
-
-.info,
-.tapHint{
-  display:none !important;
-}
-
-/* UI重なり防止: 中央寄せ比率は維持しつつ、狭い画面では安全位置へ逃がす */
-@media (max-width: 760px){
-  .systemBtns{
-    top:108px;
-    left:50%;
-    transform:translateX(-50%);
-    gap:6px;
-  }
-  .systemBtns button{
-    padding:7px 9px;
-    font-size:12px;
-  }
-  #toggleInfo{
-    top:64px;
-    left:16px;
-  }
-  .hud{
-    top:64px;
-    right:16px;
-    min-width:104px;
-    font-size:11px;
-  }
-  .minimap{
-    top:150px;
-    right:16px;
-    width:92px;
-    height:92px;
-  }
-  .mapBtn{
-    top:250px;
-    right:16px;
-    padding:7px 10px;
-    font-size:12px;
-  }
-  .ui{
-    left:8vw;
-    right:8vw;
-    bottom:78px;
-  }
-}
-
-@media (max-width: 520px){
-  .systemBtns{
-    top:116px;
-  }
-  .systemBtns button{
-    padding:6px 8px;
-    font-size:11px;
-  }
-  .hud{
-    top:62px;
-    right:12px;
-    min-width:96px;
-    padding:7px 8px;
-  }
-  #toggleInfo{
-    top:62px;
-    left:12px;
-    padding:7px 10px;
-    font-size:12px;
-  }
-  .minimap{
-    top:158px;
-    right:12px;
-    width:86px;
-    height:86px;
-  }
-  .mapBtn{
-    top:252px;
-    right:12px;
-  }
-  .ui{
-    left:7vw;
-    right:7vw;
-    bottom:82px;
-  }
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
 }
 
 
-.nearWallWarning{
-position:fixed;
-left:50%;
-top:50%;
-transform:translate(-50%,-50%);
-z-index:24;
-pointer-events:none;
-display:none;
-width:42vw;
-height:42vh;
-border-radius:22px;
-background:radial-gradient(circle, rgba(255,80,40,.18) 0%, rgba(255,80,40,.10) 42%, rgba(255,80,40,0) 72%);
-border:2px solid rgba(255,100,60,.35);
-box-shadow:0 0 28px rgba(255,70,20,.18) inset;
-}
-.nearWallWarning::after{
-content:"WALL CLOSE";
-position:absolute;
-left:50%;
-bottom:14px;
-transform:translateX(-50%);
-font-size:12px;
-font-weight:800;
-color:rgba(255,255,255,.82);
-text-shadow:0 1px 4px rgba(0,0,0,.5);
-letter-spacing:.08em;
-}
-
-#docTopBar,
-#docBottomBar{
-position:fixed;
-left:0;
-right:0;
-background:#000;
-z-index:5;
-pointer-events:none;
-}
-#docTopBar{top:0;height:var(--doc-top-safe);}
-#docBottomBar{bottom:0;height:var(--doc-bottom-safe);}
-
-@media (max-width:760px){
-  .systemBtns{top:calc(var(--game-top) + 58px) !important;}
-  #toggleInfo{top:calc(var(--game-top) + 12px) !important;}
-  .hud{top:calc(var(--game-top) + 12px) !important;}
-  .minimap{top:calc(var(--game-top) + 96px) !important;}
-  .mapBtn{top:calc(var(--game-top) + 198px) !important;}
-  .ui{bottom:calc(var(--game-bottom) + 18px) !important;}
-}
-@media (max-width:520px){
-  .systemBtns{top:calc(var(--game-top) + 62px) !important;}
-  .ui{bottom:calc(var(--game-bottom) + 12px) !important;}
-}
-
-.minimap{
-  width:112px !important;
-  height:112px !important;
-}
-.minimap canvas{
-  width:100% !important;
-  height:100% !important;
-}
-.mapPanel canvas{
-  width:100% !important;
-  height:auto !important;
-  aspect-ratio:1/1 !important;
-  object-fit:contain !important;
-}
+.notice{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}
 </style>
-
 </head>
 <body>
-<div id="docTopBar"></div>
-<div id="docBottomBar"></div>
-
-<button id="toggleInfo">操作</button>
-<div id="infoBox" class="info">
-  <div class="title">立体機動装置 Prototype</div>
-  <div>↑↓：視線上下</div>
-  <div>←→：左右旋回</div>
-  <div>左半分タップ：左ワイヤー</div>
-  <div>右半分タップ：右ワイヤー</div>
-  <div>A：巻き取り</div>
-  <div>完全めり込み防止＋地面フック＋壁蹴り＋ワイヤー調整＋タイムアタック版</div>
-  <div>B：両ワイヤー解除</div>
-</div>
-
-<div class="hud">
-  <div id="timeText">T:0.00</div>
-  <div id="heightText">H:0</div>
-  <div id="speedText">S:0</div>
-  <div id="wireText" class="small">L:OFF / R:OFF</div>
-  <div id="stateText" class="small">GROUND</div>
-</div>
-
-<div class="crosshair"></div>
-<div class="tapHint">左タップ=左ワイヤー / 右タップ=右ワイヤー</div>
-<div id="clear" class="clear">CLEAR!!</div>
-<div id="resultText" class="clear" style="top:58%; font-size:34px; display:none;"></div>
-
-<div class="systemBtns">
-  <button id="resetRunBtn">リセット</button>
-  <button id="respawnBtn">リスポーン</button>
-  <button id="cameraModeBtn">AUTO CAM</button>
-</div>
-
 <canvas id="game"></canvas>
-<div id="tapShield"></div>
-<div id="nearWallWarning" class="nearWallWarning"></div>
-
-<button id="mapBtn" class="mapBtn">地図</button>
-<div class="minimap"><canvas id="minimap" width="112" height="112"></canvas></div>
-
-<div id="mapOverlay" class="mapOverlay" style="display:none;">
-  <div class="mapPanel">
-    <div class="mapPanelHeader">
-      <div>全体マップ</div>
-      <button id="closeMap" class="closeMap">閉じる</button>
-    </div>
-    <canvas id="fullMap" width="900" height="900"></canvas>
-  </div>
-</div>
-
-<div class="ui">
-  <div class="dpad">
-    <div></div><button class="btn" id="up">↑</button><div></div>
-    <button class="btn" id="left">←</button><div></div><button class="btn" id="right">→</button>
-    <div></div><button class="btn" id="down">↓</button><div></div>
-  </div>
-  <div class="actionArea">
-    <button class="btn action" id="reel">A</button>
-    <button class="btn action" id="release">B</button>
-  </div>
-</div>
-
-<script>
-const canvas = document.getElementById("game");
-const tapShield = document.getElementById("tapShield");
-const nearWallWarning = document.getElementById("nearWallWarning");
-const ctx = canvas.getContext("2d");
-const clearUI = document.getElementById("clear");
-const resultText = document.getElementById("resultText");
-const timeText = document.getElementById("timeText");
-const heightText = document.getElementById("heightText");
-const speedText = document.getElementById("speedText");
-const wireText = document.getElementById("wireText");
-const stateText = document.getElementById("stateText");
-
-let runStartTime = performance.now();
-let clearTime = null;
-const minimapCanvas = document.getElementById("minimap");
-const minimapCtx = minimapCanvas.getContext("2d");
-const fullMapCanvas = document.getElementById("fullMap");
-const fullMapCtx = fullMapCanvas.getContext("2d");
-const mapBtn = document.getElementById("mapBtn");
-const mapOverlay = document.getElementById("mapOverlay");
-const closeMapBtn = document.getElementById("closeMap");
-const toggleInfoBtn = document.getElementById("toggleInfo");
-const infoBox = document.getElementById("infoBox");
-const cameraModeBtn = document.getElementById("cameraModeBtn");
-
-let autoCameraMode = false;
-
-function getSafeFrame(){
-  const styles = getComputedStyle(document.body);
-  const top = parseFloat(styles.getPropertyValue("--doc-top-safe")) || 0;
-  const bottom = parseFloat(styles.getPropertyValue("--doc-bottom-safe")) || 0;
-  return {top, bottom, height: Math.max(240, innerHeight - top - bottom)};
-}
-
-function layoutGameCanvas(){
-  const safe = getSafeFrame();
-
-  // 内部解像度は元の全画面サイズのまま。
-  // これにより、今まで見えていたゲーム画面全体を保持する。
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
-
-  // 表示サイズだけ、黒枠内に比率維持で縮小する。
-  const scale = Math.min(1, innerWidth / canvas.width, safe.height / canvas.height);
-  const displayW = canvas.width * scale;
-  const displayH = canvas.height * scale;
-  const left = (innerWidth - displayW) / 2;
-  const top = safe.top + (safe.height - displayH) / 2;
-
-  canvas.style.left = left + "px";
-  canvas.style.top = top + "px";
-  canvas.style.width = displayW + "px";
-  canvas.style.height = displayH + "px";
-
-  // タップ吸収レイヤーも、実際に見えているゲーム画面にだけ重ねる。
-  tapShield.style.left = left + "px";
-  tapShield.style.top = top + "px";
-  tapShield.style.width = displayW + "px";
-  tapShield.style.height = displayH + "px";
-
-  minimapCanvas.width = 112;
-  minimapCanvas.height = 112;
-  fullMapCanvas.width = 900;
-  fullMapCanvas.height = 900;
-}
-
-function resize(){
-  layoutGameCanvas();
-}
-resize();
-addEventListener("resize", resize);
-
-// タップ吸収レイヤー用: 長押し/ダブルタップ/スクロールを軽く抑制
-document.addEventListener("contextmenu", e => e.preventDefault(), {passive:false});
-document.addEventListener("dblclick", e => e.preventDefault(), {passive:false});
-document.addEventListener("gesturestart", e => e.preventDefault(), {passive:false});
-document.addEventListener("gesturechange", e => e.preventDefault(), {passive:false});
-document.addEventListener("gestureend", e => e.preventDefault(), {passive:false});
-document.addEventListener("touchmove", e => {
-  if(mapOverlay && mapOverlay.style.display === "flex") return;
-  e.preventDefault();
-}, {passive:false});
-
-toggleInfoBtn.onclick = () => {
-  infoBox.style.display = infoBox.style.display === "block" ? "none" : "block";
-};
-
-function updateCameraModeUI(){
-  document.body.classList.toggle("auto-camera", autoCameraMode);
-  cameraModeBtn.textContent = autoCameraMode ? "MANUAL CAM" : "AUTO CAM";
-  input.up = false;
-  input.down = false;
-  input.left = false;
-  input.right = false;
-}
-
-cameraModeBtn.addEventListener("click", () => {
-  autoCameraMode = !autoCameraMode;
-  updateCameraModeUI();
-});
-mapBtn.addEventListener("click", () => {
-  fullMapCanvas.width = 900;
-  fullMapCanvas.height = 900;
-  mapOverlay.style.display = "flex";
-});
-closeMapBtn.addEventListener("click", () => { mapOverlay.style.display = "none"; });
-mapOverlay.addEventListener("click", (e) => { if(e.target === mapOverlay) mapOverlay.style.display = "none"; });
-resetRunBtn.addEventListener("click", resetRun);
-respawnBtn.addEventListener("click", respawnPlayer);
-
-const input = {up:false,down:false,left:false,right:false,reel:false,release:false};
-
-function bindButton(id,key){
-  const el = document.getElementById(id);
-  const on = e => { e.preventDefault(); input[key] = true; };
-  const off = e => { e.preventDefault(); input[key] = false; };
-  ["touchstart","mousedown","pointerdown"].forEach(ev => el.addEventListener(ev,on,{passive:false}));
-  ["touchend","touchcancel","mouseup","mouseleave","pointerup","pointercancel"].forEach(ev => el.addEventListener(ev,off,{passive:false}));
-}
-["up","down","left","right","reel","release"].forEach(v => bindButton(v,v));
-
-document.addEventListener("keydown", e => {
-  if(e.key==="ArrowUp") input.up = true;
-  if(e.key==="ArrowDown") input.down = true;
-  if(e.key==="ArrowLeft") input.left = true;
-  if(e.key==="ArrowRight") input.right = true;
-  if(e.key.toLowerCase()==="a") input.reel = true;
-  if(e.key.toLowerCase()==="b") input.release = true;
-});
-document.addEventListener("keyup", e => {
-  if(e.key==="ArrowUp") input.up = false;
-  if(e.key==="ArrowDown") input.down = false;
-  if(e.key==="ArrowLeft") input.left = false;
-  if(e.key==="ArrowRight") input.right = false;
-  if(e.key.toLowerCase()==="a") input.reel = false;
-  if(e.key.toLowerCase()==="b") input.release = false;
-});
-
-const FOV = 520;
-const GRAVITY = 0.11;
-const PLAYER_RADIUS = 26;
-const PLAYER_HEIGHT = 70;
-const EYE_HEIGHT = 55;
-const DRAG_XY = 0.993;
-const DRAG_Z = 0.996;
-const MAP_CENTER_X = 6200;
-const MAP_CENTER_Y = 6200;
-const MAP_RADIUS = 5600;
-
-const player = {
-  x: 1800, y: 1800, z: 0,
-  vx: 0, vy: 0, vz: 0,
-  yaw: 0, pitch: 0,
-  grounded: true,
-  onRoof: false,
-  camRoll: 0,
-  wallKickCooldown: 0,
-  lastWallNormalX: 0,
-  lastWallNormalY: 0,
-  landingTimer: 0,
-  wallTouchTimer: 0,
-  wallKickTimer: 0,
-  jumpTimer: 0,
-  wires: {
-    left: { hooked:false, x:0, y:0, z:0, ropeLength:0 },
-    right:{ hooked:false, x:0, y:0, z:0, ropeLength:0 }
+<div id="loadStatus">3D読み込み中...</div><div id="tapLayer"></div>
+<div class="mode"><button id="modeBtn">MANUAL</button></div><div class="system"><button id="resetBtn">リセット</button><button id="respawnBtn">リスポーン</button></div>
+<div class="hud"><div id="timeText">T:0.00</div><div id="heightText">H:0</div><div id="speedText">S:0</div><div id="wireText">L:OFF / R:OFF</div><div id="stateText">GROUND</div></div>
+<div class="crosshair"></div><div id="clearText" class="clear">CLEAR!!<br><span id="rankText" style="font-size:28px"></span></div>
+<div class="ui"><div class="dpad"><div></div><button class="btn" id="up">↑</button><div></div><button class="btn" id="left">←</button><div></div><button class="btn" id="right">→</button><div></div><button class="btn" id="down">↓</button><div></div></div><div class="actionArea"><button class="btn action" id="reel">A</button><button class="btn action" id="release">B</button></div></div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
   }
-};
-
-const goal = {x: 9800, y: 9000, w: 170, h: 340, cleared: false};
-
-const spawnPoint = {x: 1800, y: 1800, z: 0, yaw: 0, pitch: 0};
-
-function resetRun(){
-  player.x = spawnPoint.x;
-  player.y = spawnPoint.y;
-  player.z = spawnPoint.z;
-  player.vx = 0;
-  player.vy = 0;
-  player.vz = 0;
-  player.yaw = spawnPoint.yaw;
-  player.pitch = spawnPoint.pitch;
-  player.grounded = true;
-  player.onRoof = false;
-  player.landingTimer = 0;
-  player.wallTouchTimer = 0;
-  player.wallKickTimer = 0;
-  player.jumpTimer = 0;
-  player.wires.left.hooked = false;
-  player.wires.right.hooked = false;
-  clearUI.style.display = "none";
-  resultText.style.display = "none";
-  goal.cleared = false;
-  clearTime = null;
-  runStartTime = performance.now();
 }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+const canvas=document.getElementById('game');const loadStatus=document.getElementById('loadStatus');const renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x8ed0ff);scene.fog=new THREE.Fog(0xbfe6ff,1200,4800);const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,9000);const clock=new THREE.Clock();
+scene.add(new THREE.HemisphereLight(0xffffff,0x6b7a55,1.2));const sun=new THREE.DirectionalLight(0xffffff,1.6);sun.position.set(900,1600,700);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.near=50;sun.shadow.camera.far=5000;sun.shadow.camera.left=-2200;sun.shadow.camera.right=2200;sun.shadow.camera.top=2200;sun.shadow.camera.bottom=-2200;scene.add(sun);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(12000,12000),new THREE.MeshStandardMaterial({color:0x74a85d,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+// ---- City grid: wider roads + buildings inside road blocks ----
+const roadMat = new THREE.MeshStandardMaterial({color:0x8f8778, roughness:.95});
+const sidewalkMat = new THREE.MeshStandardMaterial({color:0xb7b0a2, roughness:.9});
 
-function respawnPlayer(){
-  player.x = spawnPoint.x;
-  player.y = spawnPoint.y;
-  player.z = 220;
-  player.vx = 0;
-  player.vy = 0;
-  player.vz = 0;
-  player.landingTimer = 0;
-  player.wallTouchTimer = 0;
-  player.wallKickTimer = 0;
-  player.jumpTimer = 0;
-  player.wires.left.hooked = false;
-  player.wires.right.hooked = false;
+// 道幅を従来の約2倍へ
+const ROAD_W = 180;
+const SIDEWALK_W = 34;
+const BLOCK = 760;
+const CITY_RANGE = 5;
+
+// Roads: grid lines
+for(let i=-CITY_RANGE;i<=CITY_RANGE;i++){
+  const z = i * BLOCK;
+  const x = i * BLOCK;
+
+  const roadX = new THREE.Mesh(new THREE.BoxGeometry(12000,2,ROAD_W), roadMat);
+  roadX.position.set(0,1,z);
+  roadX.receiveShadow = true;
+  scene.add(roadX);
+
+  const roadZ = new THREE.Mesh(new THREE.BoxGeometry(ROAD_W,2,12000), roadMat);
+  roadZ.position.set(x,1,0);
+  roadZ.receiveShadow = true;
+  scene.add(roadZ);
+
+  const s1 = new THREE.Mesh(new THREE.BoxGeometry(12000,3,SIDEWALK_W), sidewalkMat);
+  s1.position.set(0,2.5,z + ROAD_W/2 + SIDEWALK_W/2);
+  s1.receiveShadow = true;
+  scene.add(s1);
+
+  const s2 = s1.clone();
+  s2.position.z = z - ROAD_W/2 - SIDEWALK_W/2;
+  scene.add(s2);
+
+  const s3 = new THREE.Mesh(new THREE.BoxGeometry(SIDEWALK_W,3,12000), sidewalkMat);
+  s3.position.set(x + ROAD_W/2 + SIDEWALK_W/2,2.5,0);
+  s3.receiveShadow = true;
+  scene.add(s3);
+
+  const s4 = s3.clone();
+  s4.position.x = x - ROAD_W/2 - SIDEWALK_W/2;
+  scene.add(s4);
 }
-
-
 
 const buildings = [];
-const worldWalls = [];
-const landmarks = [];
+const solids = [];
+const hookTargets = [];
 
-function addBuilding(x,y,w,d,h,style="plaster",district="mid"){
-  buildings.push({x,y,w,d,h,style,district});
+const palettes = [
+  {wall:0xb56d58, roof:0x6f3028, trim:0x7d463a},
+  {wall:0xd5b58e, roof:0x8b4337, trim:0x725039},
+  {wall:0xc7b6a4, roof:0x62584f, trim:0x86766a},
+  {wall:0xdcc9aa, roof:0x5f332b, trim:0x61432f}
+];
+
+function addBox(mesh){
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  return mesh;
 }
 
-// More intentional city layout: avenues, dense districts, plazas, towers
-const roadGap = 420;
-const blockCount = 22;
-for(let gz=0; gz<blockCount; gz++){
-  for(let gx=0; gx<blockCount; gx++){
-    const baseX = 850 + gx*roadGap;
-    const baseY = 850 + gz*roadGap;
+function createBuilding(x,z,w,d,h,pal){
+  const group = new THREE.Group();
+  group.position.set(x,h/2,z);
 
-    const centralAvenue = gx===5 || gx===11 || gx===16 || gz===4 || gz===10 || gz===15;
-    const plaza = (gx>=8 && gx<=10 && gz>=8 && gz<=10) || (gx>=14 && gx<=15 && gz>=5 && gz<=6);
-    const edgeSparse = gx<2 || gz<2 || gx>19 || gz>19;
-    if(plaza) continue;
-    if(centralAvenue && Math.random() < 0.86) continue;
-    if(edgeSparse && Math.random() < 0.35) continue;
-    if(Math.random() < 0.10) continue;
+  const bWallMat = new THREE.MeshStandardMaterial({color:pal.wall, roughness:.85});
+  const bRoofMat = new THREE.MeshStandardMaterial({color:pal.roof, roughness:.8});
+  const bTrimMat = new THREE.MeshStandardMaterial({color:pal.trim, roughness:.9});
+  const winMat = new THREE.MeshStandardMaterial({color:0xdcecf8, roughness:.25, metalness:.05});
 
-    const distFromCenter = Math.hypot(gx-11, gz-11);
-    const district = distFromCenter < 5 ? "center" : (distFromCenter < 8 ? "mid" : "edge");
+  const body = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), bWallMat);
+  body.castShadow = body.receiveShadow = true;
+  body.userData.isHookTarget = true;
+  hookTargets.push(body);
+  group.add(body);
 
-    const count = district === "center" ? (Math.random()<0.45 ? 2 : 1) : (Math.random()<0.22 ? 2 : 1);
-    const stylePool = district === "center"
-      ? ["brick","stone","plaster","brick"]
-      : district === "mid"
-      ? ["plaster","brick","timber"]
-      : ["timber","plaster","stone"];
-    const style = stylePool[Math.floor(Math.random()*stylePool.length)];
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(w*1.08,18,d*1.08), bRoofMat);
+  roof.position.y = h/2 + 9;
+  roof.castShadow = roof.receiveShadow = true;
+  group.add(roof);
 
-    const baseH = district === "center" ? 340 : district === "mid" ? 260 : 220;
-    const heightJitter = district === "center" ? 420 : district === "mid" ? 300 : 220;
-
-    if(count === 1){
-      addBuilding(
-        baseX + 8 + Math.random()*40,
-        baseY + 8 + Math.random()*40,
-        150 + Math.random()*78,
-        150 + Math.random()*78,
-        baseH + Math.random()*heightJitter,
-        style,
-        district
-      );
-    }else{
-      addBuilding(baseX+10, baseY+12, 88+Math.random()*24, 118+Math.random()*24, baseH-30 + Math.random()*heightJitter*0.7, style, district);
-      addBuilding(baseX+122, baseY+28, 92+Math.random()*26, 100+Math.random()*28, baseH + Math.random()*heightJitter, style, district);
-    }
-  }
-}
-
-// complete perimeter wall
-for(let i=0;i<260;i++){
-  const ang = (Math.PI*2/260)*i;
-  const r = MAP_RADIUS;
-  worldWalls.push({
-    x: MAP_CENTER_X + Math.cos(ang)*r,
-    y: MAP_CENTER_Y + Math.sin(ang)*r,
-    w: 170, d: 170, h: 820, style:"wall"
-  });
-}
-
-// landmarks / towers
-landmarks.push({x: 3600, y: 3300, w: 220, d: 220, h: 900, style:"tower"});
-landmarks.push({x: 7600, y: 2700, w: 240, d: 240, h: 980, style:"tower"});
-landmarks.push({x: 8400, y: 7200, w: 260, d: 260, h: 1100, style:"tower"});
-
-const solidBoxes = [...buildings, ...worldWalls, ...landmarks];
-
-function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-
-function rectContainsXY(box, x, y, margin=0){
-  return x >= box.x - margin && x <= box.x + box.w + margin &&
-         y >= box.y - margin && y <= box.y + box.d + margin;
-}
-
-function getSupportHeight(x, y, bottomZ, prevBottomZ){
-  let best = 0;
-  let bestType = "GROUND";
-  for(const box of solidBoxes){
-    const top = box.h;
-    if(rectContainsXY(box, x, y, PLAYER_RADIUS*0.82)){
-      const descendingThroughTop = prevBottomZ >= top - 8 && bottomZ <= top + 10;
-      const nearTop = Math.abs(bottomZ - top) < 16;
-      if((descendingThroughTop || nearTop) && top > best){
-        best = top;
-        bestType = "ROOF";
-      }
-    }
-  }
-  return {height: best, type: bestType};
-}
-
-function collideHorizontalAxis(nx, ny, zBottom, prevX, prevY, axis){
-  let resultX = nx;
-  let resultY = ny;
-  let hit = false;
-
-  for(const box of solidBoxes){
-    const verticalOverlap = zBottom < box.h - 2 && zBottom + PLAYER_HEIGHT > 0;
-    if(!verticalOverlap) continue;
-
-    const overlapX = resultX + PLAYER_RADIUS > box.x && resultX - PLAYER_RADIUS < box.x + box.w;
-    const overlapY = resultY + PLAYER_RADIUS > box.y && resultY - PLAYER_RADIUS < box.y + box.d;
-
-    if(overlapX && overlapY){
-      hit = true;
-      if(axis === "x"){
-        if(prevX <= box.x - PLAYER_RADIUS){
-          resultX = box.x - PLAYER_RADIUS;
-        }else if(prevX >= box.x + box.w + PLAYER_RADIUS){
-          resultX = box.x + box.w + PLAYER_RADIUS;
-        }else{
-          const leftDist = Math.abs((box.x - PLAYER_RADIUS) - prevX);
-          const rightDist = Math.abs((box.x + box.w + PLAYER_RADIUS) - prevX);
-          resultX = leftDist < rightDist ? box.x - PLAYER_RADIUS : box.x + box.w + PLAYER_RADIUS;
-        }
-      }else{
-        if(prevY <= box.y - PLAYER_RADIUS){
-          resultY = box.y - PLAYER_RADIUS;
-        }else if(prevY >= box.y + box.d + PLAYER_RADIUS){
-          resultY = box.y + box.d + PLAYER_RADIUS;
-        }else{
-          const topDist = Math.abs((box.y - PLAYER_RADIUS) - prevY);
-          const bottomDist = Math.abs((box.y + box.d + PLAYER_RADIUS) - prevY);
-          resultY = topDist < bottomDist ? box.y - PLAYER_RADIUS : box.y + box.d + PLAYER_RADIUS;
-        }
-      }
-    }
-  }
-  return {x: resultX, y: resultY, hit};
-}
-
-function resolveWallPenetration(px, py, pz){
-  let x = px;
-  let y = py;
-  let hit = false;
-  let normalX = 0;
-  let normalY = 0;
-
-  for(let pass = 0; pass < 8; pass++){
-    let changed = false;
-
-    for(const box of solidBoxes){
-      const verticalOverlap = pz < box.h - 2 && pz + PLAYER_HEIGHT > 0;
-      if(!verticalOverlap) continue;
-
-      const overlapX = x + PLAYER_RADIUS > box.x && x - PLAYER_RADIUS < box.x + box.w;
-      const overlapY = y + PLAYER_RADIUS > box.y && y - PLAYER_RADIUS < box.y + box.d;
-
-      if(overlapX && overlapY){
-        hit = true;
-
-        const moveLeft = (box.x - PLAYER_RADIUS) - x;
-        const moveRight = (box.x + box.w + PLAYER_RADIUS) - x;
-        const moveTop = (box.y - PLAYER_RADIUS) - y;
-        const moveBottom = (box.y + box.d + PLAYER_RADIUS) - y;
-
-        const options = [
-          {axis:"x", delta:moveLeft, abs:Math.abs(moveLeft), nx:-1, ny:0},
-          {axis:"x", delta:moveRight, abs:Math.abs(moveRight), nx:1, ny:0},
-          {axis:"y", delta:moveTop, abs:Math.abs(moveTop), nx:0, ny:-1},
-          {axis:"y", delta:moveBottom, abs:Math.abs(moveBottom), nx:0, ny:1},
-        ].sort((a,b)=>a.abs-b.abs);
-
-        const best = options[0];
-        normalX = best.nx;
-        normalY = best.ny;
-
-        if(best.axis === "x"){
-          x += best.delta;
-        }else{
-          y += best.delta;
-        }
-
-        changed = true;
-      }
-    }
-
-    if(!changed) break;
+  for(let y=-h/2+70; y<h/2-20; y+=90){
+    const band = new THREE.Mesh(new THREE.BoxGeometry(w*1.03,6,d*1.04), bTrimMat);
+    band.position.y = y;
+    group.add(band);
   }
 
-  return {x, y, hit, normalX, normalY};
-}
+  const rows = Math.max(1, Math.floor(h/90));
+  const colsF = Math.max(1, Math.floor(w/55));
+  const colsS = Math.max(1, Math.floor(d/55));
+  const winW = 18;
+  const winH = 30;
 
-function movePlayerWithCollisions(prevX, prevY, prevZ){
-  let x = prevX;
-  let y = prevY;
-  let z = prevZ;
+  for(let r=0;r<rows;r++){
+    const yy = -h/2 + 55 + r*80;
 
-  let vx = player.vx;
-  let vy = player.vy;
-  const totalVZ = player.vz;
+    for(let c=0;c<colsF;c++){
+      const xx = -w/2 + (c+1)*w/(colsF+1);
+      const front = new THREE.Mesh(new THREE.BoxGeometry(winW,winH,3), winMat);
+      front.position.set(xx,yy,d/2+2);
+      group.add(front);
 
-  const speed = Math.hypot(vx, vy, totalVZ);
-  const steps = Math.max(1, Math.ceil(speed / 18));
-
-  let wallHit = false;
-  let wallNormalX = 0;
-  let wallNormalY = 0;
-
-  for(let i=0; i<steps; i++){
-    let stepVX = vx / steps;
-    let stepVY = vy / steps;
-    let nextX = x + stepVX;
-    let nextY = y + stepVY;
-    let nextZ = z + totalVZ / steps;
-
-    const xMove = collideHorizontalAxis(nextX, y, nextZ, x, y, "x");
-    nextX = xMove.x;
-
-    const yMove = collideHorizontalAxis(nextX, nextY, nextZ, x, y, "y");
-    nextY = yMove.y;
-
-    if(xMove.hit && !yMove.hit){
-      vx *= 0.18;
-      stepVX = 0;
-      nextX = x;
-    }else if(yMove.hit && !xMove.hit){
-      vy *= 0.18;
-      stepVY = 0;
-      nextY = y;
-    }else if(xMove.hit && yMove.hit){
-      vx *= 0.12;
-      vy *= 0.12;
-      nextX = x;
-      nextY = y;
+      const back = front.clone();
+      back.position.z = -d/2-2;
+      group.add(back);
     }
 
-    const resolved = resolveWallPenetration(nextX, nextY, nextZ);
-    nextX = resolved.x;
-    nextY = resolved.y;
-    if(resolved.hit){
-      wallHit = true;
-      wallNormalX = resolved.normalX;
-      wallNormalY = resolved.normalY;
-      vx *= 0.55;
-      vy *= 0.55;
-    }
+    for(let c=0;c<colsS;c++){
+      const zz = -d/2 + (c+1)*d/(colsS+1);
+      const right = new THREE.Mesh(new THREE.BoxGeometry(3,winH,winW), winMat);
+      right.position.set(w/2+2,yy,zz);
+      group.add(right);
 
-    x = nextX;
-    y = nextY;
-    z = nextZ;
-  }
-
-  player.vx = vx;
-  player.vy = vy;
-
-  return {x, y, z, wallHit, wallNormalX, wallNormalY};
-}
-
-function project(wx, wy, wz){
-  const dx = wx - player.x;
-  const dy = wy - player.y;
-  const dz = wz - (player.z + EYE_HEIGHT);
-
-  const sy = Math.sin(player.yaw);
-  const cy = Math.cos(player.yaw);
-  const x1 = dx * cy - dy * sy;
-  const z1 = dx * sy + dy * cy;
-
-  const sp = Math.sin(player.pitch);
-  const cp = Math.cos(player.pitch);
-  const y2 = dz * cp - z1 * sp;
-  const z2 = dz * sp + z1 * cp;
-
-  if(z2 <= 1) return null;
-
-  const scale = FOV / z2;
-  return {
-    x: canvas.width/2 + x1 * scale,
-    y: canvas.height/2 - y2 * scale,
-    scale,
-    depth: z2
-  };
-}
-
-function screenRay(u, v){
-  const xCam = (u - canvas.width/2) / FOV;
-  const yCam = -(v - canvas.height/2) / FOV;
-  const zCam = 1;
-
-  const sp = Math.sin(player.pitch);
-  const cp = Math.cos(player.pitch);
-  let x1 = xCam;
-  let y1 = yCam * cp + zCam * sp;
-  let z1 = -yCam * sp + zCam * cp;
-
-  const sy = Math.sin(player.yaw);
-  const cy = Math.cos(player.yaw);
-  const wx = x1 * cy + z1 * sy;
-  const wy = -x1 * sy + z1 * cy;
-  const wz = y1;
-  return {x:wx, y:wy, z:wz};
-}
-
-
-function cameraForwardVector(){
-  return {
-    x: Math.sin(player.yaw) * Math.cos(player.pitch),
-    y: Math.cos(player.yaw) * Math.cos(player.pitch),
-    z: Math.sin(player.pitch)
-  };
-}
-
-function isPointBehindPlayerView(wx, wy, wz){
-  const f = cameraForwardVector();
-  const vx = wx - player.x;
-  const vy = wy - player.y;
-  const vz = wz - (player.z + EYE_HEIGHT);
-  return (vx*f.x + vy*f.y + vz*f.z) <= 0;
-}
-
-function updateNearWallWarning(){
-  const f = cameraForwardVector();
-  const startX = player.x;
-  const startY = player.y;
-  const startZ = player.z + EYE_HEIGHT;
-
-  let nearest = Infinity;
-
-  for(let dist=30; dist<=190; dist+=10){
-    const wx = startX + f.x * dist;
-    const wy = startY + f.y * dist;
-    const wz = startZ + f.z * dist;
-
-    for(const box of solidBoxes){
-      if(
-        wx >= box.x && wx <= box.x + box.w &&
-        wy >= box.y && wy <= box.y + box.d &&
-        wz >= 0 && wz <= box.h
-      ){
-        nearest = Math.min(nearest, dist);
-      }
+      const left = right.clone();
+      left.position.x = -w/2-2;
+      group.add(left);
     }
   }
 
-  if(nearest < Infinity){
-    const strength = Math.max(0, Math.min(1, (190 - nearest) / 160));
-    nearWallWarning.style.display = "block";
-    nearWallWarning.style.opacity = String(0.35 + strength * 0.65);
-    nearWallWarning.style.transform = "translate(-50%,-50%) scale(" + (0.86 + strength * 0.22).toFixed(2) + ")";
+  scene.add(group);
+  buildings.push(group);
+  solids.push({x:x-w/2, z:z-d/2, w, d, h});
+}
+
+// 建物は道路上ではなく、道路と道路で囲まれた街区内だけに置く
+function addCityBlock(blockX, blockZ){
+  const cx = (blockX + 0.5) * BLOCK;
+  const cz = (blockZ + 0.5) * BLOCK;
+
+  // スタート地点付近は空ける
+  if(Math.abs(cx) < 520 && Math.abs(cz) < 520) return;
+
+  const inner = BLOCK - ROAD_W - SIDEWALK_W*2;
+  const margin = 60;
+  const usable = inner - margin*2;
+
+  const layout = Math.random();
+  const palBase = palettes[Math.floor(Math.random()*palettes.length)];
+
+  if(layout < 0.45){
+    const w = 230 + Math.random()*130;
+    const d = 230 + Math.random()*130;
+    const h = 240 + Math.random()*430;
+    createBuilding(cx, cz, Math.min(w, usable*.82), Math.min(d, usable*.82), h, palBase);
+  }else if(layout < 0.78){
+    const alongX = Math.random() < 0.5;
+    for(let n=0;n<2;n++){
+      const offset = (n===0 ? -1 : 1) * usable * 0.23;
+      const x = cx + (alongX ? offset : 0);
+      const z = cz + (alongX ? 0 : offset);
+      const w = alongX ? usable*.34 : usable*.58;
+      const d = alongX ? usable*.58 : usable*.34;
+      const h = 220 + Math.random()*390;
+      createBuilding(x,z,w,d,h,palettes[Math.floor(Math.random()*palettes.length)]);
+    }
   }else{
-    nearWallWarning.style.display = "none";
-  }
-}
-
-function raycastWorldFromScreen(sx, sy, maxDistance=2400, step=10){
-  const ray = screenRay(sx, sy);
-
-  const fx = Math.sin(player.yaw) * Math.cos(player.pitch);
-  const fy = Math.cos(player.yaw) * Math.cos(player.pitch);
-  const fz = Math.sin(player.pitch);
-
-  // カメラ正面方向より後方へのアンカーを強く禁止
-  const dot = ray.x * fx + ray.y * fy + ray.z * fz;
-  if(dot <= 0.08) return null;
-
-  const startX = player.x;
-  const startY = player.y;
-  const startZ = player.z + EYE_HEIGHT;
-
-  const MIN_HOOK_DISTANCE = 100;
-  let groundCandidate = null;
-
-  for(let dist=20; dist<=maxDistance; dist+=step){
-    const wx = startX + ray.x * dist;
-    const wy = startY + ray.y * dist;
-    const wz = startZ + ray.z * dist;
-
-    // 念のため、計算結果が視線後方に回り込むものは捨てる
-    if(isPointBehindPlayerView(wx, wy, wz)){
-      continue;
-    }
-
-    // 地面も候補。ただし正面方向のみ
-    if(wz <= 0 && !groundCandidate){
-      const hitDist = Math.hypot(
-        wx - player.x,
-        wy - player.y,
-        0 - (player.z + EYE_HEIGHT)
-      );
-      if(hitDist >= MIN_HOOK_DISTANCE){
-        groundCandidate = {
-          x: wx,
-          y: wy,
-          z: 0,
-          hit: true,
-          surface: "ground"
-        };
-      }
-    }
-
-    for(const box of solidBoxes){
-      if(
-        wx >= box.x && wx <= box.x + box.w &&
-        wy >= box.y && wy <= box.y + box.d &&
-        wz >= 0 && wz <= box.h
-      ){
-        const hitDist = Math.hypot(
-          wx - player.x,
-          wy - player.y,
-          wz - (player.z + EYE_HEIGHT)
-        );
-
-        if(hitDist < MIN_HOOK_DISTANCE){
-          // 近すぎる壁は、刺さずに可視化だけする
-          continue;
-        }
-
-        return {
-          x: wx,
-          y: wy,
-          z: wz,
-          hit: true,
-          surface: "wall"
-        };
-      }
-    }
-  }
-
-  if(groundCandidate){
-    return groundCandidate;
-  }
-
-  return null;
-}
-
-function groundPointForScreen(u, v){
-  const originZ = player.z + EYE_HEIGHT;
-  const ray = screenRay(u, v);
-  if(ray.z >= -0.0001) return null;
-  const t = originZ / -ray.z;
-  if(t <= 0) return null;
-  return {x: player.x + ray.x * t, y: player.y + ray.y * t};
-}
-
-function addBoxFaces(list, b, colors){
-  const p1 = project(b.x, b.y, 0);
-  const p2 = project(b.x+b.w, b.y, 0);
-  const p3 = project(b.x+b.w, b.y+b.d, 0);
-  const p4 = project(b.x, b.y+b.d, 0);
-  const t1 = project(b.x, b.y, b.h);
-  const t2 = project(b.x+b.w, b.y, b.h);
-  const t3 = project(b.x+b.w, b.y+b.d, b.h);
-  const t4 = project(b.x, b.y+b.d, b.h);
-
-  if(!(p1&&p2&&p3&&p4&&t1&&t2&&t3&&t4)) return;
-
-  const faces = [
-    {pts:[t1,t2,t3,t4], color:colors.roof},
-    {pts:[t1,t2,p2,p1], color:colors.front},
-    {pts:[t2,t3,p3,p2], color:colors.right},
-    {pts:[t4,t1,p1,p4], color:colors.left}
-  ];
-
-  for(const f of faces){
-    let depth = 0;
-    for(const pt of f.pts) depth += pt.depth;
-    f.depth = depth / f.pts.length;
-    list.push(f);
-  }
-}
-
-function drawPoly(pts, color){
-  ctx.globalAlpha = 1;
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, pts[0].y);
-  for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
-  ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
-}
-
-function applySingleWirePhysics(wire){
-  if(!wire.hooked) return;
-
-  const px = player.x;
-  const py = player.y;
-  const pz = player.z + EYE_HEIGHT;
-
-  let dx = px - wire.x;
-  let dy = py - wire.y;
-  let dz = pz - wire.z;
-  let dist = Math.hypot(dx,dy,dz);
-  if(dist < 1) dist = 1;
-
-  const nx = dx / dist;
-  const ny = dy / dist;
-  const nz = dz / dist;
-
-  const speed = Math.hypot(player.vx, player.vy, player.vz);
-
-  if(input.reel){
-    const reelStrength = 8 + Math.min(14, dist * 0.012) + Math.min(8, speed * 0.22);
-    wire.ropeLength = Math.max(80, wire.ropeLength - reelStrength);
-  }else{
-    wire.ropeLength = Math.min(wire.ropeLength + 0.6, dist + 22);
-  }
-
-  if(dist > wire.ropeLength){
-    const excess = dist - wire.ropeLength;
-
-    player.x -= nx * excess;
-    player.y -= ny * excess;
-    player.z -= nz * excess;
-
-    const radialSpeed = player.vx*nx + player.vy*ny + player.vz*nz;
-    if(radialSpeed > 0){
-      player.vx -= nx * radialSpeed;
-      player.vy -= ny * radialSpeed;
-      player.vz -= nz * radialSpeed;
-    }
-
-    if(input.reel){
-      const pull = 0.68 + Math.min(0.55, excess * 0.012) + Math.min(0.38, speed * 0.01);
-      player.vx -= nx * pull;
-      player.vy -= ny * pull;
-      player.vz -= nz * pull;
-
-      const radialNow = player.vx*nx + player.vy*ny + player.vz*nz;
-      const tangentVX = player.vx - nx * radialNow;
-      const tangentVY = player.vy - ny * radialNow;
-      const tangentVZ = player.vz - nz * radialNow;
-      const tangentLen = Math.hypot(tangentVX, tangentVY, tangentVZ);
-
-      if(tangentLen > 0.001){
-        const boost = 0.08 + Math.min(0.12, speed * 0.002);
-        player.vx += (tangentVX / tangentLen) * boost;
-        player.vy += (tangentVY / tangentLen) * boost;
-        player.vz += (tangentVZ / tangentLen) * boost;
+    for(const sx of [-1,1]){
+      for(const sz of [-1,1]){
+        const x = cx + sx * usable*.22;
+        const z = cz + sz * usable*.22;
+        const w = usable*.28;
+        const d = usable*.28;
+        const h = 180 + Math.random()*310;
+        createBuilding(x,z,w,d,h,palettes[Math.floor(Math.random()*palettes.length)]);
       }
     }
   }
 }
 
-function updateCameraEffects(){
-  const leftOn = player.wires.left.hooked ? 1 : 0;
-  const rightOn = player.wires.right.hooked ? 1 : 0;
-  const sideBias = (rightOn - leftOn) * 0.05;
-  const speedBias = clamp((player.vx*Math.cos(player.yaw) - player.vy*Math.sin(player.yaw)) * 0.01, -0.05, 0.05);
-  const targetRoll = sideBias + speedBias;
-  player.camRoll += (targetRoll - player.camRoll) * 0.08;
-}
-
-function shootWire(side, sx, sy){
-  const hit = raycastWorldFromScreen(sx, sy, 2400, 10);
-  if(hit){
-    const wire = player.wires[side];
-    wire.hooked = true;
-    wire.x = hit.x;
-    wire.y = hit.y;
-    wire.z = hit.z;
-    wire.ropeLength = Math.hypot(player.x-hit.x, player.y-hit.y, (player.z+EYE_HEIGHT)-hit.z);
+for(let bx=-CITY_RANGE; bx<CITY_RANGE; bx++){
+  for(let bz=-CITY_RANGE; bz<CITY_RANGE; bz++){
+    if(Math.random() < 0.08) continue;
+    addCityBlock(bx,bz);
   }
 }
 
-function handleGameTap(e){
-  e.preventDefault();
+const wallMat=new THREE.MeshStandardMaterial({color:0xbdb7ad,roughness:.9});const wallRadius=4700;for(let i=0;i<96;i++){const a=i/96*Math.PI*2,x=Math.sin(a)*wallRadius,z=Math.cos(a)*wallRadius;const wall=new THREE.Mesh(new THREE.BoxGeometry(230,820,120),wallMat);wall.position.set(x,410,z);wall.rotation.y=a;wall.castShadow=wall.receiveShadow=true;scene.add(wall);solids.push({x:x-115,z:z-60,w:230,d:120,h:820})}
+const goalX=3100,goalZ=3250;const goal=new THREE.Group(),gateMat=new THREE.MeshStandardMaterial({color:0x35ff4a,emissive:0x0a4a0a,roughness:.4});const p1=new THREE.Mesh(new THREE.BoxGeometry(35,360,35),gateMat);p1.position.set(-100,180,0);const p2=p1.clone();p2.position.x=100;const top=new THREE.Mesh(new THREE.BoxGeometry(235,35,35),gateMat);top.position.set(0,360,0);goal.add(p1,p2,top);goal.position.set(goalX,0,goalZ);scene.add(goal);
+const playerGroup=new THREE.Group();scene.add(playerGroup);
 
-  if(mapOverlay && mapOverlay.style.display === "flex") return;
+// Humanoid v3:
+// - レスリングの構えを参考にした前傾姿勢
+// - 高腰
+// - 八頭身寄り
+// - 脚長は全身の約45%
+// - 肩位置は頭頂から約15%付近で、やや高め
+const skinMat=new THREE.MeshStandardMaterial({color:0xd1ad90,roughness:.78});
+const hairMat=new THREE.MeshStandardMaterial({color:0x17120f,roughness:.9});
+const jacketMat=new THREE.MeshStandardMaterial({color:0x303943,roughness:.86});
+const shirtMat=new THREE.MeshStandardMaterial({color:0xd6d7d2,roughness:.9});
+const pantsMat=new THREE.MeshStandardMaterial({color:0x33455d,roughness:.88});
+const bootMat=new THREE.MeshStandardMaterial({color:0x1d1d1f,roughness:.9});
+const gearMat=new THREE.MeshStandardMaterial({color:0x4c4942,roughness:.78,metalness:.12});
+const cableMat=new THREE.MeshStandardMaterial({color:0x151515,roughness:.7});
 
-  const rect = canvas.getBoundingClientRect();
-
-  // 表示上は縮小されているので、内部canvas座標へ変換する。
-  const localX = (e.clientX - rect.left) * (canvas.width / rect.width);
-  const localY = (e.clientY - rect.top) * (canvas.height / rect.height);
-
-  const side = localX < canvas.width / 2 ? "left" : "right";
-  shootWire(side, localX, localY);
+function makeCapsule(radius,length,mat){
+  const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,8,14),mat);
+  mesh.castShadow=true;mesh.receiveShadow=true;return mesh;
+}
+function makeBox(w,h,d,mat){
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+  mesh.castShadow=true;mesh.receiveShadow=true;return mesh;
+}
+function makeSphere(r,mat){
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(r,18,14),mat);
+  mesh.castShadow=true;mesh.receiveShadow=true;return mesh;
 }
 
-tapShield.addEventListener("pointerdown", handleGameTap, {passive:false});
-
-function tryAutoWallKick(wallHit, normalX, normalY){
-  if(!wallHit) return;
-  if(player.grounded) return;
-  if(player.wallKickCooldown > 0) return;
-
-  const hasWire = player.wires.left.hooked || player.wires.right.hooked;
-  const horizontalSpeed = Math.hypot(player.vx, player.vy);
-
-  // 空中かつ壁に接触していて、ある程度スピードがある or ワイヤー使用中なら発動
-  if(!hasWire && horizontalSpeed < 4) return;
-
-  const outwardBoost = 7.5;
-  const upwardBoost = 4.8;
-  const tangentialBoost = 1.2;
-
-  // 壁の反対方向へ押し返す
-  player.vx += normalX * outwardBoost;
-  player.vy += normalY * outwardBoost;
-  player.vz = Math.max(player.vz, upwardBoost);
-
-  // 少し進行方向も残して気持ちよくする
-  const len = Math.hypot(player.vx, player.vy) || 1;
-  player.vx += (player.vx / len) * tangentialBoost;
-  player.vy += (player.vy / len) * tangentialBoost;
-
-  player.wallKickCooldown = 18;
-  player.wallKickTimer = 12;
-  player.lastWallNormalX = normalX;
-  player.lastWallNormalY = normalY;
-}
-
-
-function getRankFromTime(seconds){
-  if(seconds <= 18) return "S";
-  if(seconds <= 28) return "A";
-  if(seconds <= 40) return "B";
-  if(seconds <= 55) return "C";
-  return "D";
-}
-
-function formatSeconds(seconds){
-  return seconds.toFixed(2);
-}
-
-
-function updateAutoCamera(){
-  const targetYaw = Math.atan2(goal.x - player.x, goal.y - player.y);
-  let diff = targetYaw - player.yaw;
-  while(diff > Math.PI) diff -= Math.PI * 2;
-  while(diff < -Math.PI) diff += Math.PI * 2;
-  player.yaw += diff * 0.06;
-
-  const horizontalDist = Math.hypot(goal.x - player.x, goal.y - player.y);
-  const targetPitch = clamp(0.22 + (player.z / 1400) - Math.min(0.18, horizontalDist / 12000), -0.15, 0.85);
-  player.pitch += (targetPitch - player.pitch) * 0.05;
-}
-
-
-
-const avatarState = {
-  headR: 16, torsoLen: 36, upperArm: 24, foreArm: 18, thigh: 28, shin: 26,
-  torsoAngle: Math.PI/2,
-  lShoulder: 2.6, rShoulder: 0.55, lElbow: 2.2, rElbow: 0.95,
-  lHip: 2.1, rHip: 1.0, lKnee: 2.0, rKnee: 1.1,
-  bodyOffsetX: 0, bodyOffsetY: 0,
-  shoulderDrop: 0, pelvisTilt: 0, neckForward: 0
+// 全身基準:
+// 足裏 -78 / 頭頂 約118 → 身長約196
+// 脚: 股関節 -3 から足裏 -78 = 約75、さらに骨盤周辺込みで約88〜90 → 約45%
+const rig={
+  root:playerGroup,
+  pelvis:new THREE.Group(),
+  spine:new THREE.Group(),
+  chest:new THREE.Group(),
+  neck:new THREE.Group(),
+  head:new THREE.Group(),
+  lShoulder:new THREE.Group(),rShoulder:new THREE.Group(),
+  lElbow:new THREE.Group(),rElbow:new THREE.Group(),
+  lWrist:new THREE.Group(),rWrist:new THREE.Group(),
+  lHip:new THREE.Group(),rHip:new THREE.Group(),
+  lKnee:new THREE.Group(),rKnee:new THREE.Group(),
+  lAnkle:new THREE.Group(),rAnkle:new THREE.Group()
 };
 
-function lerpVal(a,b,t){ return a + (b-a)*t; }
+playerGroup.add(rig.pelvis);
+rig.pelvis.add(rig.spine,rig.lHip,rig.rHip);
+rig.spine.add(rig.chest);
+rig.chest.add(rig.neck,rig.lShoulder,rig.rShoulder);
+rig.neck.add(rig.head);
 
-function drawLimb(x1, y1, x2, y2, width=6){
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.lineWidth = width;
-  ctx.stroke();
-}
+const parts={};
 
-function posePoint(x, y, len, ang){
-  return {x: x + Math.cos(ang) * len, y: y + Math.sin(ang) * len};
-}
+// 高腰: 骨盤を高め、胴はやや短く締める
+parts.pelvis=makeBox(38,18,24,gearMat);parts.pelvis.position.set(0,0,0);rig.pelvis.add(parts.pelvis);
+parts.abdomen=makeBox(31,30,22,shirtMat);parts.abdomen.position.set(0,23,0);rig.spine.add(parts.abdomen);
+parts.chest=makeBox(49,44,27,jacketMat);parts.chest.position.set(0,55,0);rig.chest.add(parts.chest);
 
-function update(){
-  if(autoCameraMode){
-    updateAutoCamera();
-  }else{
-    if(input.left) player.yaw -= 0.04;
-    if(input.right) player.yaw += 0.04;
-    if(input.up) player.pitch += 0.02;
-    if(input.down) player.pitch -= 0.02;
-  }
-  player.pitch = clamp(player.pitch, -1.45, 1.45);
+// 肩位置: 頭頂から約15%付近を意識して高め
+rig.lShoulder.position.set(-31,82,0);
+rig.rShoulder.position.set(31,82,0);
 
-  const wasGrounded = player.grounded;
-  if(player.wallKickCooldown > 0) player.wallKickCooldown--;
-  if(player.landingTimer > 0) player.landingTimer--;
-  if(player.wallTouchTimer > 0) player.wallTouchTimer--;
-  if(player.wallKickTimer > 0) player.wallKickTimer--;
-  if(player.jumpTimer > 0) player.jumpTimer--;
+parts.neck=makeCapsule(5,9,skinMat);parts.neck.position.set(0,88,0);rig.neck.add(parts.neck);
+parts.head=makeSphere(17,skinMat);parts.head.scale.set(.88,1.08,.92);parts.head.position.set(0,107,0);rig.head.add(parts.head);
 
-  if(input.release){
-    player.wires.left.hooked = false;
-    player.wires.right.hooked = false;
-  }
+parts.hairCap=makeSphere(18.6,hairMat);
+parts.hairCap.scale.set(1.04,.72,1.05);
+parts.hairCap.position.set(0,112,0);
+rig.head.add(parts.hairCap);
 
-  const prevX = player.x;
-  const prevY = player.y;
-  const prevZ = player.z;
+// 頭皮隠し用: 前後左右に髪の面を足して、球の潰しで禿げて見えるのを防ぐ
+parts.frontHair=makeBox(30,14,10,hairMat);
+parts.frontHair.position.set(0,106,12);
+parts.frontHair.rotation.x=-.15;
+rig.head.add(parts.frontHair);
 
-  player.vz -= GRAVITY;
+parts.sideHairL=makeBox(8,18,10,hairMat);
+parts.sideHairL.position.set(-15,104,3);
+parts.sideHairL.rotation.z=.18;
+rig.head.add(parts.sideHairL);
 
-  const moved = movePlayerWithCollisions(prevX, prevY, prevZ);
-  player.x = moved.x;
-  player.y = moved.y;
-  player.z = moved.z;
+parts.sideHairR=makeBox(8,18,10,hairMat);
+parts.sideHairR.position.set(15,104,3);
+parts.sideHairR.rotation.z=-.18;
+rig.head.add(parts.sideHairR);
 
-  applySingleWirePhysics(player.wires.left);
-  applySingleWirePhysics(player.wires.right);
-
-  // ワイヤー後も複数回押し出して、壁内部を強く否定する
-  let postWireWallHit = moved.wallHit;
-  let postWireNormalX = moved.wallNormalX;
-  let postWireNormalY = moved.wallNormalY;
-
-  for(let i=0; i<4; i++){
-    const resolvedAfterWire = resolveWallPenetration(player.x, player.y, player.z);
-    player.x = resolvedAfterWire.x;
-    player.y = resolvedAfterWire.y;
-    if(resolvedAfterWire.hit){
-      postWireWallHit = true;
-      postWireNormalX = resolvedAfterWire.normalX;
-      postWireNormalY = resolvedAfterWire.normalY;
-      player.vx *= 0.22;
-      player.vy *= 0.22;
-    }else{
-      break;
-    }
-  }
-
-  // 最終保険: 壁内部に残っていたら、そのフレームの開始位置へ少し戻す
-  const finalCheck = resolveWallPenetration(player.x, player.y, player.z);
-  if(finalCheck.hit){
-    postWireWallHit = true;
-    postWireNormalX = finalCheck.normalX;
-    postWireNormalY = finalCheck.normalY;
-    player.x = prevX + (finalCheck.x - prevX) * 0.35;
-    player.y = prevY + (finalCheck.y - prevY) * 0.35;
-    player.vx *= 0.12;
-    player.vy *= 0.12;
-  }else{
-    player.x = finalCheck.x;
-    player.y = finalCheck.y;
-  }
-
-  const support = getSupportHeight(player.x, player.y, player.z, prevZ);
-  if(player.z <= support.height){
-    player.z = support.height;
-    if(player.vz < 0) player.vz = 0;
-    player.grounded = true;
-    player.onRoof = support.type === "ROOF";
-  }else{
-    player.grounded = false;
-    player.onRoof = false;
-  }
-
-  // アニメ用の着壁状態
-  if(postWireWallHit && !player.grounded){
-    player.wallTouchTimer = 3;
-  }
-
-  // A: 自動壁蹴り
-  tryAutoWallKick(postWireWallHit, postWireNormalX, postWireNormalY);
-
-  // ジャンプ / 着地の遷移
-  if(wasGrounded && !player.grounded && player.vz > 1.1){
-    player.jumpTimer = 10;
-  }
-  if(!wasGrounded && player.grounded){
-    player.landingTimer = 10;
-  }
-
-  player.vx *= DRAG_XY;
-  player.vy *= DRAG_XY;
-  player.vz *= DRAG_Z;
-
-  updateCameraEffects();
-
-  const elapsed = clearTime !== null ? clearTime : (performance.now() - runStartTime) / 1000;
-
-  const dx = goal.x - player.x;
-  const dy = goal.y - player.y;
-  if(Math.hypot(dx,dy) < 180 && !goal.cleared){
-    goal.cleared = true;
-    clearTime = elapsed;
-    const rank = getRankFromTime(clearTime);
-    clearUI.style.display = "block";
-    resultText.textContent = "TIME " + formatSeconds(clearTime) + " / RANK " + rank;
-    resultText.style.display = "block";
-  }
-
-  timeText.textContent = "T:" + formatSeconds(elapsed);
-  heightText.textContent = "H:" + Math.floor(player.z);
-  speedText.textContent = "S:" + Math.floor(Math.hypot(player.vx,player.vy,player.vz)*100);
-  wireText.textContent =
-    "L:" + (player.wires.left.hooked ? "ON" : "OFF") +
-    " / R:" + (player.wires.right.hooked ? "ON" : "OFF");
-  stateText.textContent = player.onRoof ? "ROOF" : (player.grounded ? "GROUND" : "AIR");
-}
-
-function drawSkyAndGround(){
-  const skyGrad = ctx.createLinearGradient(0,0,0,canvas.height);
-  skyGrad.addColorStop(0,"#66c1ff");
-  skyGrad.addColorStop(0.55,"#d9f3ff");
-  skyGrad.addColorStop(1,"#f8fcff");
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  const cloudShift = (player.yaw * 220) % 280;
-  ctx.fillStyle = "rgba(255,255,255,.42)";
-  for(let i=-2;i<7;i++){
-    const x = i*210 - cloudShift;
-    const y = 90 + Math.sin(i*0.7 + player.yaw*0.7)*12 + player.pitch*70;
-    ctx.beginPath();
-    ctx.ellipse(x+60, y, 48, 18, 0, 0, Math.PI*2);
-    ctx.ellipse(x+112, y+4, 60, 22, 0, 0, Math.PI*2);
-    ctx.ellipse(x+165, y, 44, 16, 0, 0, Math.PI*2);
-    ctx.fill();
-  }
-
-  const rowStep = 4;
-  for(let y=0; y<canvas.height; y+=rowStep){
-    const gpMid = groundPointForScreen(canvas.width/2, y + rowStep*0.5);
-    if(!gpMid) continue;
-
-    const stripeX = Math.floor(gpMid.x / 210);
-    const stripeY = Math.floor(gpMid.y / 210);
-    const checker = (stripeX + stripeY) & 1;
-
-    const dist = Math.min(1, Math.hypot(gpMid.x-player.x, gpMid.y-player.y) / 7000);
-    const fade = 1 - dist * 0.5;
-    const roadBand = (Math.abs((gpMid.x % 420 + 420) % 420 - 210) < 28 || Math.abs((gpMid.y % 420 + 420) % 420 - 210) < 28);
-
-    let baseR = checker ? 110 : 122;
-    let baseG = checker ? 158 : 172;
-    let baseB = checker ? 76 : 88;
-
-    if(roadBand){
-      baseR = 156; baseG = 146; baseB = 128;
-    }
-
-    const r = Math.max(0, Math.floor(baseR * fade));
-    const g = Math.max(0, Math.floor(baseG * fade));
-    const b = Math.max(0, Math.floor(baseB * fade));
-    ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
-    ctx.fillRect(0, y, canvas.width, rowStep+1);
-  }
-}
+parts.backHair=makeBox(30,18,10,hairMat);
+parts.backHair.position.set(0,104,-13);
+parts.backHair.rotation.x=.10;
+rig.head.add(parts.backHair);
 
 
-function getBuildingPalette(b){
-  if(b.style === "brick"){
-    return {roof:"#7c3f35", front:"#b46b57", right:"#9f5845", left:"#8d4d3c", win:"#d9ebf9"};
-  }
-  if(b.style === "stone"){
-    return {roof:"#6e6258", front:"#c6b6a6", right:"#b5a392", left:"#a18f80", win:"#d7e8f6"};
-  }
-  if(b.style === "timber"){
-    return {roof:"#6b3a30", front:"#d9c3a1", right:"#b7926b", left:"#9f7b57", win:"#dce9f5"};
-  }
-  if(b.style === "tower"){
-    return {roof:"#6a4738", front:"#c8ae90", right:"#b69073", left:"#9f7a62", win:"#d9edf8"};
-  }
-  return {roof:"#954c3e", front:"#d7b28d", right:"#c4926b", left:"#ae7c58", win:"#dbeaf7"};
-}
 
-function drawProjectedRect(p1,p2,p3,p4,color){
-  if(!(p1&&p2&&p3&&p4)) return;
-  ctx.globalAlpha = 1;
-  ctx.beginPath();
-  ctx.moveTo(p1.x,p1.y);
-  ctx.lineTo(p2.x,p2.y);
-  ctx.lineTo(p3.x,p3.y);
-  ctx.lineTo(p4.x,p4.y);
-  ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
-}
+// hips high and compact
+rig.spine.position.set(0,0,0);
+rig.chest.position.set(0,0,0);
+rig.neck.position.set(0,0,0);
+rig.lHip.position.set(-15,-4,0);
+rig.rHip.position.set(15,-4,0);
 
-function drawBuildingWindows(b, pal){
-  const centerX = b.x + b.w * 0.5;
-  const centerY = b.y + b.d * 0.5;
-  const distToBuilding = Math.hypot(centerX - player.x, centerY - player.y);
+// arms: 肘が自然に曲がるレスリング構え用に少し長め
+parts.lUpperArm=makeCapsule(5.3,34,jacketMat);parts.rUpperArm=makeCapsule(5.3,34,jacketMat);
+parts.lLowerArm=makeCapsule(4.7,32,shirtMat);parts.rLowerArm=makeCapsule(4.7,32,shirtMat);
+parts.lHand=makeSphere(5.8,skinMat);parts.rHand=makeSphere(5.8,skinMat);
 
-  // 近距離では窓や屋根縁を描かない。壁面の透け感を防ぐ
-  if(distToBuilding < 260) return;
+rig.lShoulder.add(parts.lUpperArm,rig.lElbow);
+rig.rShoulder.add(parts.rUpperArm,rig.rElbow);
+parts.lUpperArm.position.set(0,-18,0);
+parts.rUpperArm.position.set(0,-18,0);
+rig.lElbow.position.set(0,-40,0);
+rig.rElbow.position.set(0,-40,0);
+rig.lElbow.add(parts.lLowerArm,rig.lWrist);
+rig.rElbow.add(parts.rLowerArm,rig.rWrist);
+parts.lLowerArm.position.set(0,-17,0);
+parts.rLowerArm.position.set(0,-17,0);
+rig.lWrist.position.set(0,-37,0);
+rig.rWrist.position.set(0,-37,0);
+rig.lWrist.add(parts.lHand);
+rig.rWrist.add(parts.rHand);
 
-  const spacingX = 48;
-  const spacingY = 66;
-  const marginX = 20;
-  const marginTop = 24;
-  const rows = Math.max(1, Math.floor((b.h - 40) / spacingY));
-  const colsFront = Math.max(1, Math.floor((b.w - marginX*2) / spacingX));
-  const colsSide = Math.max(1, Math.floor((b.d - marginX*2) / spacingX));
+// legs: 全身比で約45%。太もも/すねをやや長め、高腰を維持
+parts.lThigh=makeCapsule(7.2,42,pantsMat);parts.rThigh=makeCapsule(7.2,42,pantsMat);
+parts.lShin=makeCapsule(6.3,42,pantsMat);parts.rShin=makeCapsule(6.3,42,pantsMat);
+parts.lBoot=makeBox(13,8,28,bootMat);parts.rBoot=makeBox(13,8,28,bootMat);
 
-  // プレイヤー位置に応じて、見えている面だけに窓を出す
-  const showFront = player.y < b.y;
-  const showBack = player.y > b.y + b.d;
-  const showRight = player.x > b.x + b.w;
-  const showLeft = player.x < b.x;
+rig.lHip.add(parts.lThigh,rig.lKnee);
+rig.rHip.add(parts.rThigh,rig.rKnee);
+parts.lThigh.position.set(0,-23,0);
+parts.rThigh.position.set(0,-23,0);
+rig.lKnee.position.set(0,-48,0);
+rig.rKnee.position.set(0,-48,0);
+rig.lKnee.add(parts.lShin,rig.lAnkle);
+rig.rKnee.add(parts.rShin,rig.rAnkle);
+parts.lShin.position.set(0,-23,0);
+parts.rShin.position.set(0,-23,0);
+rig.lAnkle.position.set(0,-48,0);
+rig.rAnkle.position.set(0,-48,0);
+rig.lAnkle.add(parts.lBoot);
+rig.rAnkle.add(parts.rBoot);
+parts.lBoot.position.set(0,-2,8);
+parts.rBoot.position.set(0,-2,8);
 
-  if(showFront){
-    for(let r=0; r<rows; r++){
-      for(let c=0; c<colsFront; c++){
-        const wx = b.x + marginX + c*spacingX;
-        const wy = b.y + 1;
-        const wz = 18 + marginTop + r*spacingY;
-        const ww = 18, wh = 28;
+// gear
+parts.lGear=makeBox(16,14,22,gearMat);parts.rGear=makeBox(16,14,22,gearMat);
+parts.lGear.position.set(-30,4,0);parts.rGear.position.set(30,4,0);rig.pelvis.add(parts.lGear,parts.rGear);
+parts.backUnit=makeBox(30,26,12,gearMat);parts.backUnit.position.set(0,49,-18);rig.chest.add(parts.backUnit);
+parts.lBlade=makeBox(4,38,4,cableMat);parts.rBlade=makeBox(4,38,4,cableMat);
+parts.lBlade.position.set(-39,1,15);parts.rBlade.position.set(39,1,15);
+parts.lBlade.rotation.z=.18;parts.rBlade.rotation.z=-.18;rig.pelvis.add(parts.lBlade,parts.rBlade);
 
-        const p1 = project(wx, wy, wz);
-        const p2 = project(wx+ww, wy, wz);
-        const p3 = project(wx+ww, wy, wz+wh);
-        const p4 = project(wx, wy, wz+wh);
-        drawProjectedRect(p1,p2,p3,p4,pal.win);
+const limbs=parts,torso=parts.chest;
+
+// Default is no longer upright.
+// レスリング構え: 股関節から前傾、胸は丸めすぎず、膝は軽く曲げ、腕は前方で構える
+const avatarAnim={
+  spineX:.18,chestX:.24,chestZ:0,pelvisZ:0,headX:-.10,
+  lArmX:.70,rArmX:.70,lArmZ:-.32,rArmZ:.32,
+  lElbowX:-.28,rElbowX:-.28,lWristX:.06,rWristX:.06,
+  lLegX:-.18,rLegX:-.18,lLegZ:.12,rLegZ:-.12,
+  lKneeX:.46,rKneeX:.46,lAnkleX:-.10,rAnkleX:-.10
+};
+function lerpAvatar(a,b,t){return a+(b-a)*t}
+function smoothAvatar(target,rate=.16){for(const k in target){avatarAnim[k]=lerpAvatar(avatarAnim[k]??0,target[k],rate)}}
+
+const leftLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x111111,linewidth:2}));
+const rightLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x111111,linewidth:2}));
+scene.add(leftLine,rightLine);
+
+// ---- External GLB character ----
+// index.html と同じ階層に peoplemodel.glb を置く。
+let externalCharacter = null;
+let externalMixer = null;
+let externalReady = false;
+let externalLoadFailed = false;
+const MODEL_EXTRA_SCALE = 1.0;
+
+// GLBモデルの向き補正。
+// 現状、頭が下・脚が上に見えているためX軸180度で上下を反転する。
+const MODEL_ROT_X = 0;
+const MODEL_ROT_Y = Math.PI;
+const MODEL_ROT_Z = 0;
+
+playerGroup.visible = true;
+
+const gltfLoader = new GLTFLoader();
+gltfLoader.load(
+  "peoplemodel.glb",
+  (gltf) => {
+    // GLBは原点・サイズがバラバラなので、必ずラッパーで正規化する
+    const rawModel = gltf.scene;
+    rawModel.traverse((obj) => {
+      if(obj.isMesh){
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+        obj.userData.isPlayerModel = true;
+        obj.frustumCulled = false;
       }
-    }
-  }
-
-  if(showBack){
-    for(let r=0; r<rows; r++){
-      for(let c=0; c<colsFront; c++){
-        const wx = b.x + marginX + c*spacingX;
-        const wy = b.y + b.d - 1;
-        const wz = 18 + marginTop + r*spacingY;
-        const ww = 18, wh = 28;
-
-        const p1 = project(wx, wy, wz);
-        const p2 = project(wx+ww, wy, wz);
-        const p3 = project(wx+ww, wy, wz+wh);
-        const p4 = project(wx, wy, wz+wh);
-        drawProjectedRect(p1,p2,p3,p4,pal.win);
-      }
-    }
-  }
-
-  if(showRight){
-    for(let r=0; r<rows; r++){
-      for(let c=0; c<colsSide; c++){
-        const wx = b.x + b.w - 1;
-        const wy = b.y + marginX + c*spacingX;
-        const wz = 18 + marginTop + r*spacingY;
-        const ww = 18, wh = 28;
-
-        const p1 = project(wx, wy, wz);
-        const p2 = project(wx, wy+ww, wz);
-        const p3 = project(wx, wy+ww, wz+wh);
-        const p4 = project(wx, wy, wz+wh);
-        drawProjectedRect(p1,p2,p3,p4,pal.win);
-      }
-    }
-  }
-
-  if(showLeft){
-    for(let r=0; r<rows; r++){
-      for(let c=0; c<colsSide; c++){
-        const wx = b.x + 1;
-        const wy = b.y + marginX + c*spacingX;
-        const wz = 18 + marginTop + r*spacingY;
-        const ww = 18, wh = 28;
-
-        const p1 = project(wx, wy, wz);
-        const p2 = project(wx, wy+ww, wz);
-        const p3 = project(wx, wy+ww, wz+wh);
-        const p4 = project(wx, wy, wz+wh);
-        drawProjectedRect(p1,p2,p3,p4,pal.win);
-      }
-    }
-  }
-
-  // 屋根枠も遠距離のときだけ描く
-  if((b.style === "timber" || b.style === "plaster") && distToBuilding > 360){
-    const r1 = project(b.x, b.y, b.h);
-    const r2 = project(b.x+b.w, b.y, b.h);
-    const r3 = project(b.x+b.w, b.y+b.d, b.h);
-    const r4 = project(b.x, b.y+b.d, b.h);
-    if(r1&&r2&&r3&&r4){
-      ctx.strokeStyle = "rgba(60,40,30,.22)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(r1.x,r1.y);
-      ctx.lineTo(r2.x,r2.y);
-      ctx.lineTo(r3.x,r3.y);
-      ctx.lineTo(r4.x,r4.y);
-      ctx.closePath();
-      ctx.stroke();
-    }
-  }
-}
-
-function drawRoadGuideLines(){
-  ctx.strokeStyle = "rgba(255,255,255,.08)";
-  ctx.lineWidth = 1;
-  for(let gx=850; gx<=9800; gx+=420){
-    let started = false;
-    ctx.beginPath();
-    for(let gy=850; gy<=9800; gy+=220){
-      const p = project(gx, gy, 0);
-      if(!p) continue;
-      if(!started){ ctx.moveTo(p.x,p.y); started = true; } else { ctx.lineTo(p.x,p.y); }
-    }
-    if(started) ctx.stroke();
-  }
-}
-
-function drawWorld(){
-  // 道路ガイドは先に描く
-  drawRoadGuideLines();
-
-  // 建物ごとに奥から手前へ描画し、窓も同じ建物の直後に描く
-  const worldObjects = [
-    ...buildings.map(b => ({type:"building", box:b})),
-    ...landmarks.map(b => ({type:"landmark", box:b})),
-    ...worldWalls.map(b => ({type:"wall", box:b}))
-  ];
-
-  worldObjects.sort((a,b) => {
-    const acx = a.box.x + a.box.w * 0.5;
-    const acy = a.box.y + a.box.d * 0.5;
-    const bcx = b.box.x + b.box.w * 0.5;
-    const bcy = b.box.y + b.box.d * 0.5;
-
-    const ad = (acx - player.x) * (acx - player.x) + (acy - player.y) * (acy - player.y);
-    const bd = (bcx - player.x) * (bcx - player.x) + (bcy - player.y) * (bcy - player.y);
-    return bd - ad; // 遠い順
-  });
-
-  for(const obj of worldObjects){
-    const b = obj.box;
-    let pal;
-
-    if(obj.type === "wall"){
-      pal = {
-        roof:"#918e89",
-        front:"#d2cdc6",
-        right:"#bbb6ae",
-        left:"#a6a199"
-      };
-    }else{
-      pal = getBuildingPalette(b);
-    }
-
-    const faces = [];
-    addBoxFaces(faces, b, {
-      roof:pal.roof,
-      front:pal.front,
-      right:pal.right,
-      left:pal.left
     });
 
-    faces.sort((a,b)=>b.depth-a.depth);
-    for(const f of faces) drawPoly(f.pts, f.color);
+    externalCharacter = new THREE.Group();
+    scene.add(externalCharacter);
+    externalCharacter.add(rawModel);
 
-    if(obj.type !== "wall"){
-      drawBuildingWindows(b, getBuildingPalette(b));
+    // まず向き補正をかける
+    rawModel.rotation.set(MODEL_ROT_X, MODEL_ROT_Y, MODEL_ROT_Z);
+    rawModel.updateMatrixWorld(true);
+
+    // 向き補正後の境界で、サイズ・中心・足元を正規化する
+    let box = new THREE.Box3().setFromObject(rawModel);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+
+    const targetHeight = 100;
+    const modelHeight = Math.max(size.y, 0.0001);
+    const scale = targetHeight / modelHeight;
+
+    rawModel.scale.setScalar(scale);
+    rawModel.updateMatrixWorld(true);
+
+    // スケール後にもう一度境界を測る
+    box = new THREE.Box3().setFromObject(rawModel);
+    const center2 = new THREE.Vector3();
+    box.getCenter(center2);
+
+    // X/Z中心をプレイヤー中心へ、最下点を足元へ合わせる
+    rawModel.position.x -= center2.x;
+    rawModel.position.z -= center2.z;
+    rawModel.position.y -= box.min.y;
+
+    rawModel.updateMatrixWorld(true);
+
+    // ラッパーの追加縮小は使わない
+    externalCharacter.scale.setScalar(1.0);
+
+    if(gltf.animations && gltf.animations.length > 0){
+      externalMixer = new THREE.AnimationMixer(rawModel);
+      const action = externalMixer.clipAction(gltf.animations[0]);
+      action.reset();
+      action.setLoop(THREE.LoopRepeat);
+      action.play();
     }
+
+    // Idleアニメ優先: ロード時ポーズ補正なし
+
+    externalReady = true;
+    playerGroup.visible = false;
+    if(typeof loadStatus !== 'undefined' && loadStatus) loadStatus.style.display = "none";
+  },
+  undefined,
+  (err) => {
+    console.warn("peoplemodel.glb load failed:", err);
+    externalLoadFailed = true;
+    playerGroup.visible = true;
+    if(typeof loadStatus !== 'undefined' && loadStatus) loadStatus.textContent = "peoplemodel.glbを読み込めませんでした。\nファイル名と配置を確認してください。";
   }
+);
+
+
+function findBoneByKeywords(root, keywords){
+  let found = null;
+  const lower = keywords.map(k => k.toLowerCase());
+  root.traverse((obj) => {
+    if(found || !obj.isBone) return;
+    const name = (obj.name || "").toLowerCase();
+    if(lower.some(k => name.includes(k))){
+      found = obj;
+    }
+  });
+  return found;
 }
 
-function drawGoal(){
-  if(goal.cleared) return;
-  const lb = project(goal.x, goal.y, 0);
-  const lt = project(goal.x, goal.y, goal.h);
-  const rb = project(goal.x+goal.w, goal.y, 0);
-  const rt = project(goal.x+goal.w, goal.y, goal.h);
-  if(!(lb&&lt&&rb&&rt)) return;
+function cacheCharacterBones(model){
+  if(model.userData.bonesCached) return model.userData.bones;
 
-  ctx.strokeStyle = "lime";
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.moveTo(lb.x, lb.y);
-  ctx.lineTo(lt.x, lt.y);
-  ctx.lineTo(rt.x, rt.y);
-  ctx.lineTo(rb.x, rb.y);
-  ctx.stroke();
+  const bones = {
+    hips: findBoneByKeywords(model, ["mixamorigHips", "hips"]),
+    spine: findBoneByKeywords(model, ["mixamorigSpine", "spine"]),
+    spine1: findBoneByKeywords(model, ["mixamorigSpine1", "spine1", "chest"]),
+    spine2: findBoneByKeywords(model, ["mixamorigSpine2", "spine2", "upperchest"]),
+    neck: findBoneByKeywords(model, ["mixamorigNeck", "neck"]),
+    head: findBoneByKeywords(model, ["mixamorigHead", "head"]),
 
-  ctx.fillStyle = "rgba(180,255,180,.16)";
-  ctx.beginPath();
-  ctx.moveTo(lb.x, lb.y);
-  ctx.lineTo(lt.x, lt.y);
-  ctx.lineTo(rt.x, rt.y);
-  ctx.lineTo(rb.x, rb.y);
-  ctx.closePath();
-  ctx.fill();
-}
+    lShoulder: findBoneByKeywords(model, ["mixamorigLeftShoulder", "leftshoulder"]),
+    rShoulder: findBoneByKeywords(model, ["mixamorigRightShoulder", "rightshoulder"]),
+    lArm: findBoneByKeywords(model, ["mixamorigLeftArm", "leftarm", "upperarm_l"]),
+    rArm: findBoneByKeywords(model, ["mixamorigRightArm", "rightarm", "upperarm_r"]),
+    lFore: findBoneByKeywords(model, ["mixamorigLeftForeArm", "leftforearm", "lowerarm_l"]),
+    rFore: findBoneByKeywords(model, ["mixamorigRightForeArm", "rightforearm", "lowerarm_r"]),
+    lHand: findBoneByKeywords(model, ["mixamorigLeftHand", "lefthand"]),
+    rHand: findBoneByKeywords(model, ["mixamorigRightHand", "righthand"]),
 
-function drawOneWire(wire, startX){
-  if(!wire.hooked) return;
-  const hook = project(wire.x, wire.y, wire.z);
-  if(!hook) return;
-
-  ctx.beginPath();
-  ctx.moveTo(startX, canvas.height*0.82);
-  ctx.lineTo(hook.x, hook.y);
-  ctx.strokeStyle = "#1d1d1d";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(hook.x, hook.y, Math.max(3, 8*hook.scale), 0, Math.PI*2);
-  ctx.fillStyle = "#2e2e2e";
-  ctx.fill();
-}
-
-function drawWires(){
-  drawOneWire(player.wires.left, canvas.width/2 - 20);
-  drawOneWire(player.wires.right, canvas.width/2 + 20);
-}
-
-function drawArrow(){
-  if(goal.cleared) return;
-  const dx = goal.x - player.x;
-  const dy = goal.y - player.y;
-  const angle = Math.atan2(dx, dy) - player.yaw;
-  ctx.save();
-  ctx.translate(canvas.width - 72, 70);
-  ctx.rotate(angle);
-  ctx.beginPath();
-  ctx.moveTo(0,-24);
-  ctx.lineTo(15,16);
-  ctx.lineTo(-15,16);
-  ctx.closePath();
-  ctx.fillStyle = "lime";
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawAvatar(){
-  const x = canvas.width/2;
-  const y = canvas.height*0.84;
-
-  ctx.strokeStyle = "#111";
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.fillStyle = "#111";
-
-  const hasWire = player.wires.left.hooked || player.wires.right.hooked;
-  const isReeling = input.reel && hasWire;
-  const isFalling = !player.grounded && player.vz < -1.0;
-  const isJumping = !player.grounded && player.vz > 1.0;
-  const isLanding = player.landingTimer > 0;
-  const isWallTouch = player.wallTouchTimer > 0 && !player.grounded;
-  const isWallKick = player.wallKickTimer > 0;
-
-  const t = performance.now() * 0.012;
-  const target = {
-    headR: 16, torsoLen: 38, upperArm: 25, foreArm: 20, thigh: 30, shin: 28,
-    torsoAngle: Math.PI/2,
-    lShoulder: 2.45, rShoulder: 0.7, lElbow: 2.1, rElbow: 1.0,
-    lHip: 2.0, rHip: 1.15, lKnee: 1.9, rKnee: 1.25,
-    bodyOffsetX: 0, bodyOffsetY: 0,
-    shoulderDrop: 0, pelvisTilt: 0, neckForward: 0
+    lUpLeg: findBoneByKeywords(model, ["mixamorigLeftUpLeg", "leftupleg", "thigh_l"]),
+    rUpLeg: findBoneByKeywords(model, ["mixamorigRightUpLeg", "rightupleg", "thigh_r"]),
+    lLeg: findBoneByKeywords(model, ["mixamorigLeftLeg", "leftleg", "calf_l"]),
+    rLeg: findBoneByKeywords(model, ["mixamorigRightLeg", "rightleg", "calf_r"]),
+    lFoot: findBoneByKeywords(model, ["mixamorigLeftFoot", "leftfoot"]),
+    rFoot: findBoneByKeywords(model, ["mixamorigRightFoot", "rightfoot"])
   };
 
-  if(player.grounded && !isLanding){
-    target.torsoAngle = Math.PI/2 + Math.sin(t)*0.025;
-    target.lShoulder += Math.sin(t)*0.08;
-    target.rShoulder -= Math.sin(t)*0.08;
-    target.lHip += Math.sin(t+0.5)*0.05;
-    target.rHip -= Math.sin(t+0.5)*0.05;
-  }
-
-  if(isReeling){
-    target.torsoAngle = Math.PI/2 + 0.22;
-    target.neckForward = 5;
-    target.lShoulder = 3.65;
-    target.rShoulder = -0.5;
-    target.lElbow = 4.15;
-    target.rElbow = -0.2;
-    target.lHip = 1.9;
-    target.rHip = 1.32;
-    target.lKnee = 2.35;
-    target.rKnee = 0.82;
-    target.bodyOffsetY = -6;
-    target.pelvisTilt = 0.06;
-  }else if(isWallKick){
-    const kickBias = player.lastWallNormalX >= 0 ? 1 : -1;
-    target.torsoAngle = Math.PI/2 - 0.18 * kickBias;
-    target.bodyOffsetX = -kickBias * 10;
-    target.bodyOffsetY = -3;
-    target.shoulderDrop = -2 * kickBias;
-    target.pelvisTilt = 0.10 * kickBias;
-    target.neckForward = 4;
-
-    if(kickBias > 0){
-      target.lShoulder = 3.15; target.lElbow = 3.95;
-      target.rShoulder = 0.45; target.rElbow = 0.95;
-      target.lHip = 2.75; target.lKnee = 2.95;
-      target.rHip = 0.82; target.rKnee = 0.92;
-    }else{
-      target.rShoulder = -0.15; target.rElbow = -0.05;
-      target.lShoulder = 2.55; target.lElbow = 2.1;
-      target.rHip = 0.35; target.rKnee = 0.35;
-      target.lHip = 2.15; target.lKnee = 2.2;
-    }
-  }else if(isWallTouch){
-    const wallBias = player.lastWallNormalX >= 0 ? 1 : -1;
-    target.torsoAngle = Math.PI/2 - 0.10 * wallBias;
-    target.bodyOffsetX = -wallBias * 7;
-    target.shoulderDrop = -3 * wallBias;
-    target.pelvisTilt = 0.08 * wallBias;
-    target.neckForward = 2;
-    if(wallBias > 0){
-      target.lShoulder = 3.0; target.lElbow = 3.45;
-      target.rShoulder = 0.55; target.rElbow = 0.95;
-      target.lHip = 2.35; target.lKnee = 2.5;
-      target.rHip = 0.95; target.rKnee = 1.05;
-    }else{
-      target.rShoulder = 0.05; target.rElbow = 0.35;
-      target.lShoulder = 2.6; target.lElbow = 2.15;
-      target.rHip = 0.55; target.rKnee = 0.65;
-      target.lHip = 2.05; target.lKnee = 2.05;
-    }
-  }else if(isLanding){
-    const squash = player.landingTimer / 10;
-    target.torsoLen = 32;
-    target.upperArm = 23;
-    target.thigh = 26;
-    target.shin = 24;
-    target.torsoAngle = Math.PI/2 + 0.08;
-    target.lShoulder = 2.9; target.rShoulder = 0.28;
-    target.lElbow = 2.25; target.rElbow = 0.95;
-    target.lHip = 2.1; target.rHip = 1.05;
-    target.lKnee = 1.28; target.rKnee = 1.86;
-    target.bodyOffsetY = 10 * squash;
-    target.neckForward = 2;
-  }else if(isFalling){
-    target.torsoAngle = Math.PI/2 - 0.05;
-    target.lShoulder = 2.2; target.rShoulder = 1.0;
-    target.lElbow = 2.0; target.rElbow = 1.15;
-    target.lHip = 1.95; target.rHip = 1.18;
-    target.lKnee = 1.78; target.rKnee = 1.38;
-    target.bodyOffsetY = 2;
-  }else if(isJumping || player.jumpTimer > 0){
-    target.torsoAngle = Math.PI/2 - 0.10;
-    target.neckForward = 3;
-    target.lShoulder = 3.15; target.rShoulder = -0.22;
-    target.lElbow = 3.8; target.rElbow = 0.1;
-    target.lHip = 2.3; target.rHip = 0.95;
-    target.lKnee = 2.5; target.rKnee = 0.78;
-    target.bodyOffsetY = -5;
-  }
-
-  const smooth = isLanding || isWallKick ? 0.22 : 0.16;
-  for(const k of Object.keys(target)){
-    avatarState[k] = lerpVal(avatarState[k], target[k], smooth);
-  }
-
-  const hx = x + avatarState.bodyOffsetX;
-  const hy = y + avatarState.bodyOffsetY;
-
-  ctx.beginPath();
-  ctx.arc(hx, hy, avatarState.headR, 0, Math.PI*2);
-  ctx.fill();
-
-  const neckBase = {x: hx + avatarState.neckForward, y: hy + 18};
-  const pelvis = posePoint(neckBase.x, neckBase.y, avatarState.torsoLen, avatarState.torsoAngle);
-  drawLimb(neckBase.x, neckBase.y, pelvis.x, pelvis.y, 6);
-
-  ctx.fillRect(pelvis.x - 20, pelvis.y - 4, 40, 8);
-
-  const shoulderCenter = {x: neckBase.x, y: hy + 31};
-
-  const lElbowPt = posePoint(shoulderCenter.x - 3, shoulderCenter.y + avatarState.shoulderDrop, avatarState.upperArm, avatarState.lShoulder);
-  const rElbowPt = posePoint(shoulderCenter.x + 3, shoulderCenter.y - avatarState.shoulderDrop, avatarState.upperArm, avatarState.rShoulder);
-  const lHandPt = posePoint(lElbowPt.x, lElbowPt.y, avatarState.foreArm, avatarState.lElbow);
-  const rHandPt = posePoint(rElbowPt.x, rElbowPt.y, avatarState.foreArm, avatarState.rElbow);
-
-  drawLimb(shoulderCenter.x, shoulderCenter.y, lElbowPt.x, lElbowPt.y, 6);
-  drawLimb(shoulderCenter.x, shoulderCenter.y, rElbowPt.x, rElbowPt.y, 6);
-  drawLimb(lElbowPt.x, lElbowPt.y, lHandPt.x, lHandPt.y, 5);
-  drawLimb(rElbowPt.x, rElbowPt.y, rHandPt.x, rHandPt.y, 5);
-
-  const pelvisCenter = {x: pelvis.x, y: pelvis.y};
-  const lKneePt = posePoint(pelvisCenter.x, pelvisCenter.y, avatarState.thigh, avatarState.lHip + avatarState.pelvisTilt);
-  const rKneePt = posePoint(pelvisCenter.x, pelvisCenter.y, avatarState.thigh, avatarState.rHip + avatarState.pelvisTilt);
-  const lFootPt = posePoint(lKneePt.x, lKneePt.y, avatarState.shin, avatarState.lKnee);
-  const rFootPt = posePoint(rKneePt.x, rKneePt.y, avatarState.shin, avatarState.rKnee);
-
-  drawLimb(pelvisCenter.x, pelvisCenter.y, lKneePt.x, lKneePt.y, 6);
-  drawLimb(pelvisCenter.x, pelvisCenter.y, rKneePt.x, rKneePt.y, 6);
-  drawLimb(lKneePt.x, lKneePt.y, lFootPt.x, lFootPt.y, 5);
-  drawLimb(rKneePt.x, rKneePt.y, rFootPt.x, rFootPt.y, 5);
+  model.userData.bones = bones;
+  model.userData.bonesCached = true;
+  return bones;
 }
 
-// ---- Maps ----
-function worldBounds(){
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for(const b of solidBoxes){
-    minX = Math.min(minX, b.x);
-    minY = Math.min(minY, b.y);
-    maxX = Math.max(maxX, b.x + b.w);
-    maxY = Math.max(maxY, b.y + b.d);
-  }
-  minX = Math.min(minX, goal.x);
-  minY = Math.min(minY, goal.y);
-  maxX = Math.max(maxX, goal.x + goal.w);
-  maxY = Math.max(maxY, goal.y + goal.h);
-  return {minX, minY, maxX, maxY};
+function setBoneRot(bone, x=0, y=0, z=0){
+  if(!bone) return;
+  bone.rotation.set(x, y, z);
 }
-const MAP_BOUNDS = worldBounds();
 
-function drawMapBase(ctx2, w, h, cameraCentered){
-  ctx2.clearRect(0,0,w,h);
-  ctx2.fillStyle = "#eef1f3";
-  ctx2.fillRect(0,0,w,h);
+function applyBaseCombatStance(model){
+  if(!model) return;
+  const b = cacheCharacterBones(model);
 
-  let minX, minY, scale, offsetX=0, offsetY=0;
-  if(cameraCentered){
-    const span = 3600;
-    minX = player.x - span/2;
-    minY = player.y - span/2;
-    scale = Math.min(w/span, h/span);
+  // 基本構え:
+  // 画像の左メインポーズを参考に、腰高・前傾・腕は胸前・膝は軽く曲げる。
+  // 左右対称にせず、左足をやや前、右足を支えにする。
+  setBoneRot(b.hips, 0.08, 0.00, -0.04);
+  setBoneRot(b.spine, 0.20, 0.00, 0.02);
+  setBoneRot(b.spine1, 0.22, 0.00, -0.03);
+  setBoneRot(b.spine2, 0.14, 0.00, 0.02);
+  setBoneRot(b.neck, -0.08, 0.00, 0.00);
+  setBoneRot(b.head, -0.06, 0.00, 0.00);
+
+  setBoneRot(b.lShoulder, 0.08, 0.00, -0.10);
+  setBoneRot(b.rShoulder, 0.08, 0.00, 0.10);
+
+  // 腕を胸の前に出す。股間前やTポーズにならないよう、肘を引きすぎない。
+  setBoneRot(b.lArm, 0.72, 0.16, -0.62);
+  setBoneRot(b.rArm, 0.66, -0.14, 0.54);
+  setBoneRot(b.lFore, -0.58, 0.08, 0.14);
+  setBoneRot(b.rFore, -0.52, -0.06, -0.12);
+  setBoneRot(b.lHand, 0.04, 0.00, 0.04);
+  setBoneRot(b.rHand, 0.04, 0.00, -0.04);
+
+  // 高腰のワイドスタンス。膝を曲げるが沈み込ませない。
+  setBoneRot(b.lUpLeg, -0.24, 0.04, 0.20);
+  setBoneRot(b.rUpLeg, -0.16, -0.02, -0.16);
+  setBoneRot(b.lLeg, 0.38, 0.00, 0.00);
+  setBoneRot(b.rLeg, 0.32, 0.00, 0.00);
+  setBoneRot(b.lFoot, -0.10, 0.00, -0.02);
+  setBoneRot(b.rFoot, -0.08, 0.00, 0.02);
+}
+
+function updateExternalCharacter(dt){
+  if(!externalCharacter) return;
+  const raw = externalCharacter.children && externalCharacter.children[0];
+  // orientation test: pose disabled until upright confirmed
+
+  externalCharacter.position.copy(player.pos);
+
+  // 足元をプレイヤー接地点へ合わせる
+  externalCharacter.position.y = player.pos.y - 50;
+
+  // 向き補正。逆向きなら + Math.PI を外す
+  externalCharacter.rotation.y = player.yaw + Math.PI;
+
+  if(externalMixer){
+    externalMixer.update(dt);
+  }
+}
+
+const input={up:false,down:false,left:false,right:false,reel:false,release:false};let reelWasDown=false;let autoMode=false;const player={pos:new THREE.Vector3(0,60,0),vel:new THREE.Vector3(0,0,0),yaw:0,pitch:0,grounded:false,wires:{left:{hooked:false,point:new THREE.Vector3(),length:0},right:{hooked:false,point:new THREE.Vector3(),length:0}}};let startTime=performance.now(),clearTime=null,cleared=false;
+function reset(){player.pos.set(0,80,0);player.vel.set(0,0,0);player.yaw=0;player.pitch=0;player.wires.left.hooked=false;player.wires.right.hooked=false;startTime=performance.now();clearTime=null;cleared=false;document.getElementById('clearText').style.display='none'}function respawn(){player.pos.set(0,360,0);player.vel.set(0,0,0);player.wires.left.hooked=false;player.wires.right.hooked=false}document.getElementById('resetBtn').onclick=reset;document.getElementById('respawnBtn').onclick=respawn;document.getElementById('modeBtn').onclick=()=>{autoMode=!autoMode;document.body.classList.toggle('auto',autoMode);document.getElementById('modeBtn').textContent=autoMode?'AUTO':'MANUAL'};
+function bind(id,key){const el=document.getElementById(id),on=e=>{e.preventDefault();input[key]=true},off=e=>{e.preventDefault();input[key]=false};['pointerdown','touchstart','mousedown'].forEach(ev=>el.addEventListener(ev,on,{passive:false}));['pointerup','pointercancel','touchend','touchcancel','mouseup','mouseleave'].forEach(ev=>el.addEventListener(ev,off,{passive:false}))}['up','down','left','right','reel','release'].forEach(v=>bind(v,v));
+document.addEventListener('keydown',e=>{if(e.key==='ArrowUp')input.up=true;if(e.key==='ArrowDown')input.down=true;if(e.key==='ArrowLeft')input.left=true;if(e.key==='ArrowRight')input.right=true;if(e.key.toLowerCase()==='a')input.reel=true;if(e.key.toLowerCase()==='b')input.release=true});document.addEventListener('keyup',e=>{if(e.key==='ArrowUp')input.up=false;if(e.key==='ArrowDown')input.down=false;if(e.key==='ArrowLeft')input.left=false;if(e.key==='ArrowRight')input.right=false;if(e.key.toLowerCase()==='a')input.reel=false;if(e.key.toLowerCase()==='b')input.release=false});
+function forwardVector(){return new THREE.Vector3(Math.sin(player.yaw)*Math.cos(player.pitch),Math.sin(player.pitch),Math.cos(player.yaw)*Math.cos(player.pitch)).normalize()}
+function shootWire(side,sx,sy){
+  const ndc=new THREE.Vector2((sx/innerWidth)*2-1,-(sy/innerHeight)*2+1);
+  const raycaster=new THREE.Raycaster();
+  raycaster.setFromCamera(ndc,camera);
+  raycaster.far=8000;
+
+  let hit=null;
+
+  // 建物本体を最優先で判定。窓・装飾・道路などを先に拾う問題を回避する。
+  if(typeof hookTargets!=='undefined' && hookTargets.length>0){
+    const buildingHits=raycaster.intersectObjects(hookTargets,false);
+    hit=buildingHits.find(h=>h.distance>40);
+  }
+
+  // 建物に当たらなかった場合だけ他オブジェクトへフォールバック
+  if(!hit){
+    const objects=[];
+    scene.traverse(o=>{
+      if(
+        o.isMesh &&
+        o!==ground &&
+        o.parent!==playerGroup &&
+        !o.userData?.isPlayerModel
+      ){
+        objects.push(o);
+      }
+    });
+    const hits=raycaster.intersectObjects(objects,true);
+    hit=hits.find(h=>h.distance>70);
+  }
+
+  // 救済として地面も候補
+  if(!hit){
+    const gh=raycaster.intersectObject(ground);
+    hit=gh.find(h=>h.distance>70);
+  }
+
+  if(!hit)return;
+
+  const f=forwardVector();
+  const toHit=hit.point.clone().sub(player.pos).normalize();
+
+  // ほぼ真横・後方だけ除外。上階狙いをしやすくするため緩める。
+  if(f.dot(toHit)<0.01)return;
+
+  const w=player.wires[side];
+  w.hooked=true;
+  w.point.copy(hit.point);
+  w.length=getWireOrigin(side).distanceTo(hit.point);
+}
+document.getElementById('tapLayer').addEventListener('pointerdown',e=>{if(e.target.id!=='tapLayer')return;e.preventDefault();shootWire(e.clientX<innerWidth/2?'left':'right',e.clientX,e.clientY)},{passive:false});
+function collide(){const radius=28;player.grounded=false;if(player.pos.y<60){player.pos.y=60;if(player.vel.y<0)player.vel.y=0;player.grounded=true}for(const b of solids){if(player.pos.y>b.h+80)continue;const insideX=player.pos.x>b.x-radius&&player.pos.x<b.x+b.w+radius,insideZ=player.pos.z>b.z-radius&&player.pos.z<b.z+b.d+radius;if(insideX&&insideZ&&player.pos.y<b.h+70){const left=Math.abs(player.pos.x-(b.x-radius)),right=Math.abs(player.pos.x-(b.x+b.w+radius)),front=Math.abs(player.pos.z-(b.z-radius)),back=Math.abs(player.pos.z-(b.z+b.d+radius)),min=Math.min(left,right,front,back);if(min===left){player.pos.x=b.x-radius;player.vel.x*=.25}else if(min===right){player.pos.x=b.x+b.w+radius;player.vel.x*=.25}else if(min===front){player.pos.z=b.z-radius;player.vel.z*=.25}else{player.pos.z=b.z+b.d+radius;player.vel.z*=.25}}if(player.pos.x>b.x-radius&&player.pos.x<b.x+b.w+radius&&player.pos.z>b.z-radius&&player.pos.z<b.z+b.d+radius&&player.pos.y<b.h+60&&player.pos.y>b.h-30&&player.vel.y<=0){player.pos.y=b.h+60;player.vel.y=0;player.grounded=true}}}
+function applyWire(w,dt){
+  if(!w.hooked)return;
+
+  const toPlayer=player.pos.clone().sub(w.point);
+  const dist=toPlayer.length();
+  if(dist<1)return;
+
+  const n=toPlayer.clone().normalize();
+  const speed=player.vel.length();
+
+  if(!input.reel){
+    // Aを押していない時:
+    // ワイヤーは刺さっているだけ。勝手な巻き取り・吸引をほぼ発生させない。
+    w.length=Math.max(w.length,dist*0.985);
+    w.length=Math.min(w.length+2.2,dist+120);
+
+    // 伸び切った時だけ、外向き速度を軽く抑えて紐の存在感を残す。
+    if(dist>w.length+35){
+      const radial=player.vel.dot(n);
+      if(radial>0){
+        player.vel.addScaledVector(n,-radial*0.18);
+      }
+      player.pos.addScaledVector(n,-(dist-w.length)*0.06);
+    }
+    return;
+  }
+
+  // Aを押している時だけ巻き取り。
+  const elasticAllowance=Math.min(75,speed*1.05);
+  const reelSpeed=22+Math.min(68,dist*.04);
+  w.length=Math.max(60,w.length-reelSpeed);
+
+  const effectiveLength=w.length+elasticAllowance*.18;
+
+  if(dist>effectiveLength){
+    const excess=dist-effectiveLength;
+
+    player.pos.addScaledVector(n,-excess*.76);
+
+    const radial=player.vel.dot(n);
+    if(radial>0){
+      player.vel.addScaledVector(n,-radial*.86);
+    }
+
+    const tension=34+Math.min(82,excess*.32);
+    player.vel.addScaledVector(n,-tension*dt*60);
+
+    const tangent=player.vel.clone().addScaledVector(n,-player.vel.dot(n));
+    const tLen=tangent.length();
+    if(tLen>0.1){
+      player.vel.addScaledVector(tangent.normalize(),Math.min(1.25,tLen*.016));
+    }
+  }
+
+  // 距離内でもA中はアンカー方向へ軽く吸わせる
+  const pull=12+Math.min(40,dist*.02);
+  player.vel.addScaledVector(n,-pull*dt*60);
+}
+
+function updateCamera(dt){if(autoMode){const dx=goalX-player.pos.x,dz=goalZ-player.pos.z,targetYaw=Math.atan2(dx,dz);let diff=targetYaw-player.yaw;while(diff>Math.PI)diff-=Math.PI*2;while(diff<-Math.PI)diff+=Math.PI*2;player.yaw+=diff*.05;const dist=Math.hypot(dx,dz),targetPitch=THREE.MathUtils.clamp(Math.atan2(160-player.pos.y,dist)+.05,-.55,.55);player.pitch+=(targetPitch-player.pitch)*.04}else{if(input.left)player.yaw+=1.8*dt;if(input.right)player.yaw-=1.8*dt;if(input.up)player.pitch+=1.2*dt;if(input.down)player.pitch-=1.2*dt;player.pitch=THREE.MathUtils.clamp(player.pitch,-1.2,1.2)}const f=forwardVector(),target=player.pos.clone().add(new THREE.Vector3(0,40,0)),camPos=target.clone().addScaledVector(f,-230).add(new THREE.Vector3(0,80,0));camera.position.lerp(camPos,.22);camera.lookAt(target.clone().addScaledVector(f,180))}
+function updateAvatar(){
+  playerGroup.position.copy(player.pos);
+  playerGroup.rotation.y=player.yaw+Math.PI;
+// レスリング構えの前傾を全身で表現するため、骨盤起点でキャラ全体を前に倒す
+playerGroup.rotation.x=0.22;
+
+  const hasWire=player.wires.left.hooked||player.wires.right.hooked;
+  const reeling=input.reel&&hasWire;
+  const falling=!player.grounded&&player.vel.y<-1.0;
+  const rising=!player.grounded&&player.vel.y>1.0;
+  const speed=player.vel.length();
+  const time=performance.now()*0.006;
+
+  // Base: wrestling stance.
+  // 高腰、股関節から前傾、膝は深く落としすぎない。
+  const target={
+    spineX:.18,chestX:.24,chestZ:0,pelvisZ:0,headX:-.10,
+    lArmX:.70,rArmX:.70,lArmZ:-.32,rArmZ:.32,
+    lElbowX:-.28,rElbowX:-.28,lWristX:.06,rWristX:.06,
+    lLegX:-.18,rLegX:-.18,lLegZ:.12,rLegZ:-.12,
+    lKneeX:.46,rKneeX:.46,lAnkleX:-.10,rAnkleX:-.10
+  };
+
+  if(player.grounded){
+    // 構え中の小さな重心移動
+    target.chestZ=Math.sin(time)*.018;
+    target.pelvisZ=-Math.sin(time)*.010;
+    target.lArmX+=Math.sin(time)*.035;
+    target.rArmX-=Math.sin(time)*.035;
+  }
+
+  if(reeling){
+    // 巻き取り: レスリング構えからさらに前傾。
+    // 肘は体側へ引き、肩は前方、腰は高く残す。
+    target.spineX=.28;
+    target.chestX=.38;
+    target.headX=-.14;
+    target.lArmX=1.05;
+    target.rArmX=1.05;
+    target.lArmZ=-.34;
+    target.rArmZ=.34;
+    target.lElbowX=-.52;
+    target.rElbowX=-.52;
+    target.lWristX=.10;
+    target.rWristX=.10;
+    target.lLegX=-.22;
+    target.rLegX=-.18;
+    target.lLegZ=.16;
+    target.rLegZ=-.16;
+    target.lKneeX=.54;
+    target.rKneeX=.50;
+    target.lAnkleX=-.14;
+    target.rAnkleX=-.14;
+  }else if(falling){
+    // 落下: 前傾は残しつつ、腕でバランスを取る。
+    target.spineX=.10;
+    target.chestX=.16;
+    target.headX=-.06;
+    target.lArmX=.56;
+    target.rArmX=.56;
+    target.lArmZ=-.68;
+    target.rArmZ=.68;
+    target.lElbowX=-.08;
+    target.rElbowX=-.08;
+    target.lLegX=-.24;
+    target.rLegX=-.26;
+    target.lLegZ=.24;
+    target.rLegZ=-.24;
+    target.lKneeX=.42;
+    target.rKneeX=.38;
+  }else if(rising){
+    // 上昇: 構えから脚をやや伸ばす。肩は高めを維持。
+    target.spineX=.08;
+    target.chestX=.12;
+    target.headX=-.04;
+    target.lArmX=.82;
+    target.rArmX=.82;
+    target.lArmZ=-.30;
+    target.rArmZ=.30;
+    target.lElbowX=-.06;
+    target.rElbowX=-.06;
+    target.lLegX=-.32;
+    target.rLegX=-.24;
+    target.lKneeX=.34;
+    target.rKneeX=.30;
+  }else if(speed>12&&!player.grounded){
+    // 高速滑空: レスリング前傾を空中姿勢に変換。
+    target.spineX=.18;
+    target.chestX=.26;
+    target.lArmX=.44;
+    target.rArmX=.44;
+    target.lArmZ=-.55;
+    target.rArmZ=.55;
+    target.lElbowX=-.06;
+    target.rElbowX=-.06;
+    target.lLegX=-.18;
+    target.rLegX=-.20;
+    target.lKneeX=.28;
+    target.rKneeX=.26;
+  }
+
+  smoothAvatar(target,reeling?.22:.15);
+
+  rig.spine.rotation.x=avatarAnim.spineX;
+  rig.chest.rotation.x=avatarAnim.chestX;
+  rig.chest.rotation.z=avatarAnim.chestZ;
+  rig.pelvis.rotation.z=avatarAnim.pelvisZ;
+  rig.head.rotation.x=avatarAnim.headX;
+
+  rig.lShoulder.rotation.set(avatarAnim.lArmX,0,avatarAnim.lArmZ);
+  rig.rShoulder.rotation.set(avatarAnim.rArmX,0,avatarAnim.rArmZ);
+  rig.lElbow.rotation.x=avatarAnim.lElbowX;
+  rig.rElbow.rotation.x=avatarAnim.rElbowX;
+  rig.lWrist.rotation.x=avatarAnim.lWristX;
+  rig.rWrist.rotation.x=avatarAnim.rWristX;
+
+  rig.lHip.rotation.set(avatarAnim.lLegX,0,avatarAnim.lLegZ);
+  rig.rHip.rotation.set(avatarAnim.rLegX,0,avatarAnim.rLegZ);
+  rig.lKnee.rotation.x=avatarAnim.lKneeX;
+  rig.rKnee.rotation.x=avatarAnim.rKneeX;
+  rig.lAnkle.rotation.x=avatarAnim.lAnkleX;
+  rig.rAnkle.rotation.x=avatarAnim.rAnkleX;
+}
+
+function getWireOrigin(side){
+  // キャラの左右腰からワイヤーを出す。
+  // 画面上でクロスしないよう、左右の符号を修正。
+  const sideSign = side === "left" ? 1 : -1;
+
+  // キャラ基準の右方向ベクトル
+  const right = new THREE.Vector3(
+    Math.cos(player.yaw),
+    0,
+    -Math.sin(player.yaw)
+  ).normalize();
+
+  // キャラ基準の前方向ベクトル
+  const forward = new THREE.Vector3(
+    Math.sin(player.yaw),
+    0,
+    Math.cos(player.yaw)
+  ).normalize();
+
+  const origin = player.pos.clone();
+
+  // 腰の高さ。前回は低すぎたため、膝付近から腰付近へ上げる
+  origin.y -= 5;
+
+  // 左右腰位置
+  origin.addScaledVector(right, sideSign * 15);
+
+  // 身体にめり込まないよう少し前へ
+  origin.addScaledVector(forward, 10);
+
+  return origin;
+}
+
+function updateWireLines(){
+  function setLine(line,w,side){
+    if(!w.hooked){
+      line.visible=false;
+      return;
+    }
+    line.visible=true;
+
+    const start = getWireOrigin(side);
+    line.geometry.dispose();
+    line.geometry = new THREE.BufferGeometry().setFromPoints([start,w.point]);
+  }
+
+  setLine(leftLine,player.wires.left,"left");
+  setLine(rightLine,player.wires.right,"right");
+}
+function getRank(sec){if(sec<=18)return'S';if(sec<=30)return'A';if(sec<=45)return'B';if(sec<=60)return'C';return'D'}function updateUI(){const elapsed=clearTime??(performance.now()-startTime)/1000;timeText.textContent='T:'+elapsed.toFixed(2);heightText.textContent='H:'+Math.floor(player.pos.y);speedText.textContent='S:'+Math.floor(player.vel.length()*10);wireText.textContent='L:'+(player.wires.left.hooked?'ON':'OFF')+' / R:'+(player.wires.right.hooked?'ON':'OFF');stateText.textContent=(externalReady?'MODEL':'FALLBACK')+' / '+(player.grounded?'GROUND':'AIR')}
+function handleReelTakeoff(){
+  const hasWire=player.wires.left.hooked||player.wires.right.hooked;
+  const reelPressedNow=input.reel&&!reelWasDown;
+
+  if(reelPressedNow&&hasWire){
+    // Aを押した瞬間に踏み切り。
+    // 地上・屋上なら上方向の初速を追加し、摩擦拘束から離脱する。
+    if(player.grounded){
+      player.vel.y=Math.max(player.vel.y,8.5);
+      player.grounded=false;
+    }else{
+      player.vel.y+=1.2;
+    }
+
+    // アンカー方向へ初動を与える。
+    const targets=[];
+    if(player.wires.left.hooked)targets.push(player.wires.left.point);
+    if(player.wires.right.hooked)targets.push(player.wires.right.point);
+
+    if(targets.length){
+      const center=new THREE.Vector3();
+      for(const p of targets)center.add(p);
+      center.multiplyScalar(1/targets.length);
+
+      const toAnchor=center.clone().sub(player.pos);
+      if(toAnchor.length()>1){
+        player.vel.addScaledVector(toAnchor.normalize(),9.5);
+      }
+    }
+  }
+
+  reelWasDown=input.reel;
+}
+
+function checkGoal(){if(cleared)return;const d=Math.hypot(player.pos.x-goalX,player.pos.z-goalZ);if(d<160&&player.pos.y<430){cleared=true;clearTime=(performance.now()-startTime)/1000;rankText.textContent='TIME '+clearTime.toFixed(2)+' / RANK '+getRank(clearTime);clearText.style.display='block'}}
+function animate(){const dt=Math.min(.033,clock.getDelta());if(input.release){player.wires.left.hooked=false;player.wires.right.hooked=false}
+  handleReelTakeoff();player.vel.y-=14*dt;applyWire(player.wires.left,dt);applyWire(player.wires.right,dt);const MAX_SPEED=95;
+  if(player.vel.length()>MAX_SPEED){
+    player.vel.setLength(MAX_SPEED);
+  }
+  player.pos.addScaledVector(player.vel,dt*60);collide();
+  if(player.grounded&&!input.reel){
+    // 地上でAを押していない時は踏ん張る
+    player.vel.x*=0.82;
+    player.vel.z*=0.82;
   }else{
-    const pad = 300;
-    const worldW = (MAP_BOUNDS.maxX - MAP_BOUNDS.minX) + pad*2;
-    const worldH = (MAP_BOUNDS.maxY - MAP_BOUNDS.minY) + pad*2;
-    minX = MAP_BOUNDS.minX - pad;
-    minY = MAP_BOUNDS.minY - pad;
-    scale = Math.min(w/worldW, h/worldH);
-    offsetX = (w - worldW*scale)/2;
-    offsetY = (h - worldH*scale)/2;
+    // A中・空中では摩擦をほぼゼロにする
+    player.vel.x*=0.997;
+    player.vel.z*=0.997;
   }
-
-  function tx(x){ return offsetX + (x - minX) * scale; }
-  function ty(y){ return offsetY + (y - minY) * scale; }
-
-  ctx2.strokeStyle = "rgba(160,160,160,.18)";
-  ctx2.lineWidth = 1;
-  for(let gx=0; gx<20000; gx+=420){
-    const x = tx(gx);
-    if(x < 0 || x > w) continue;
-    ctx2.beginPath(); ctx2.moveTo(x,0); ctx2.lineTo(x,h); ctx2.stroke();
-  }
-  for(let gy=0; gy<20000; gy+=420){
-    const y = ty(gy);
-    if(y < 0 || y > h) continue;
-    ctx2.beginPath(); ctx2.moveTo(0,y); ctx2.lineTo(w,y); ctx2.stroke();
-  }
-
-  for(const b of buildings){
-    ctx2.fillStyle = "#b98b64";
-    ctx2.fillRect(tx(b.x), ty(b.y), Math.max(1,b.w*scale), Math.max(1,b.d*scale));
-  }
-  for(const b of landmarks){
-    ctx2.fillStyle = "#8f5e43";
-    ctx2.fillRect(tx(b.x), ty(b.y), Math.max(1,b.w*scale), Math.max(1,b.d*scale));
-  }
-  for(const b of worldWalls){
-    ctx2.fillStyle = "#c6c8ca";
-    ctx2.fillRect(tx(b.x), ty(b.y), Math.max(1,b.w*scale), Math.max(1,b.d*scale));
-  }
-
-  ctx2.strokeStyle = "lime";
-  ctx2.lineWidth = 2;
-  ctx2.strokeRect(tx(goal.x), ty(goal.y), Math.max(2,goal.w*scale), Math.max(2,30*scale));
-
-  const shoulderL = {x: player.x - Math.cos(player.yaw)*25, y: player.y + Math.sin(player.yaw)*25};
-  const shoulderR = {x: player.x + Math.cos(player.yaw)*25, y: player.y - Math.sin(player.yaw)*25};
-
-  if(player.wires.left.hooked){
-    ctx2.strokeStyle = "#2563eb";
-    ctx2.lineWidth = 2;
-    ctx2.beginPath();
-    ctx2.moveTo(tx(shoulderL.x), ty(shoulderL.y));
-    ctx2.lineTo(tx(player.wires.left.x), ty(player.wires.left.y));
-    ctx2.stroke();
-  }
-  if(player.wires.right.hooked){
-    ctx2.strokeStyle = "#dc2626";
-    ctx2.lineWidth = 2;
-    ctx2.beginPath();
-    ctx2.moveTo(tx(shoulderR.x), ty(shoulderR.y));
-    ctx2.lineTo(tx(player.wires.right.x), ty(player.wires.right.y));
-    ctx2.stroke();
-  }
-
-  const px = tx(player.x), py = ty(player.y);
-  ctx2.fillStyle = "#111";
-  ctx2.beginPath(); ctx2.arc(px, py, Math.max(3, 8*scale), 0, Math.PI*2); ctx2.fill();
-
-  const dirLen = Math.max(12, 50*scale);
-  ctx2.strokeStyle = "#111";
-  ctx2.lineWidth = 2;
-  ctx2.beginPath();
-  ctx2.moveTo(px, py);
-  ctx2.lineTo(px + Math.sin(player.yaw)*dirLen, py + Math.cos(player.yaw)*dirLen);
-  ctx2.stroke();
-
-  if(!cameraCentered){
-    const span = 2900;
-    const rx = tx(player.x - span/2);
-    const ry = ty(player.y - span/2);
-    const rw = span * scale;
-    const rh = span * scale;
-    ctx2.strokeStyle = "rgba(17,17,17,.45)";
-    ctx2.lineWidth = 2;
-    ctx2.strokeRect(rx, ry, rw, rh);
-  }
-}
-
-function drawMaps(){
-  drawMapBase(minimapCtx, minimapCanvas.width, minimapCanvas.height, true);
-  if(mapOverlay.style.display === "flex"){
-    drawMapBase(fullMapCtx, fullMapCanvas.width, fullMapCanvas.height, false);
-  }
-}
-
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.save();
-  ctx.translate(canvas.width/2, canvas.height/2);
-  ctx.rotate(player.camRoll);
-  ctx.translate(-canvas.width/2, -canvas.height/2);
-
-  drawSkyAndGround();
-  drawWorld();
-  drawGoal();
-  drawWires();
-  drawArrow();
-  drawAvatar();
-  updateNearWallWarning();
-
-  ctx.restore();
-  drawMaps();
-}
-
-function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-loop();
+  player.vel.y*=0.999;updateCamera(dt);updateAvatar();updateExternalCharacter(dt);updateWireLines();checkGoal();updateUI();renderer.render(scene,camera);requestAnimationFrame(animate)}
+function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}addEventListener('resize',resize);resize();reset();
+setTimeout(()=>{ if(loadStatus && !externalReady && !externalLoadFailed) loadStatus.textContent="3Dは起動済み。モデル読込中..."; }, 1200);
+animate();document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});document.addEventListener('contextmenu',e=>e.preventDefault(),{passive:false});
 </script>
 </body>
 </html>
