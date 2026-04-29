@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>立体機動装置 Prototype 3D 踏ん張り修正版</title>
+<title>立体機動装置 Prototype 3D 横位置完全固定版</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -680,9 +680,8 @@ function applyWire(w,dt){
   const speed=player.vel.length();
 
   if(!input.reel){
-    // Aを押していない時:
-    // 完全に物理無効。ゴム感・張力・速度抑制・位置補正を全部停止。
-    // 見た目のワイヤー線だけ残す。
+    // Aを押していない時は完全に物理無効。
+    // 張力・ゴム感・位置補正・速度補正なし。
     return;
   }
 
@@ -713,7 +712,6 @@ function applyWire(w,dt){
     }
   }
 
-  // A中だけアンカー方向へ吸わせる
   const pull=14+Math.min(44,dist*.022);
   player.vel.addScaledVector(n,-pull*dt*60);
 }
@@ -928,33 +926,76 @@ function handleReelTakeoff(){
 }
 
 function checkGoal(){if(cleared)return;const d=Math.hypot(player.pos.x-goalX,player.pos.z-goalZ);if(d<160&&player.pos.y<430){cleared=true;clearTime=(performance.now()-startTime)/1000;rankText.textContent='TIME '+clearTime.toFixed(2)+' / RANK '+getRank(clearTime);clearText.style.display='block'}}
-function animate(){const dt=Math.min(.033,clock.getDelta());if(input.release){player.wires.left.hooked=false;player.wires.right.hooked=false;reelWasDown=input.reel}
-  handleReelTakeoff();player.vel.y-=14*dt;applyWire(player.wires.left,dt);applyWire(player.wires.right,dt);const MAX_SPEED=95;
+function animate(){
+  const dt=Math.min(.033,clock.getDelta());
+
+  const wireHeld=player.wires.left.hooked||player.wires.right.hooked;
+  const shouldBrace=wireHeld&&!input.reel;
+
+  // A未入力でワイヤーが刺さっている間は、横位置を保存して完全に踏ん張る。
+  // 速度を0にするだけだと、そのフレームの位置更新で微妙に滑るため、座標も戻す。
+  const braceX=player.pos.x;
+  const braceZ=player.pos.z;
+
+  if(input.release){
+    player.wires.left.hooked=false;
+    player.wires.right.hooked=false;
+    reelWasDown=input.reel;
+  }
+
+  handleReelTakeoff();
+
+  if(shouldBrace){
+    player.vel.x=0;
+    player.vel.z=0;
+  }
+
+  player.vel.y-=14*dt;
+
+  applyWire(player.wires.left,dt);
+  applyWire(player.wires.right,dt);
+
+  if(shouldBrace){
+    player.vel.x=0;
+    player.vel.z=0;
+  }
+
+  const MAX_SPEED=95;
   if(player.vel.length()>MAX_SPEED){
     player.vel.setLength(MAX_SPEED);
   }
-  player.pos.addScaledVector(player.vel,dt*60);collide();
 
-  // Aを押していない＋接地中＋ワイヤーありの場合は完全に踏ん張る。
-  // これでワイヤーを張っただけでクリープ的に滑る現象を止める。
-  if(
-    player.grounded &&
-    !input.reel &&
-    (player.wires.left.hooked || player.wires.right.hooked)
-  ){
-    player.vel.x = 0;
-    player.vel.z = 0;
+  player.pos.addScaledVector(player.vel,dt*60);
+  collide();
+
+  if(shouldBrace){
+    // 接地判定に依存せず、横方向だけ完全固定。
+    // 縦方向は重力・床判定を残す。
+    player.pos.x=braceX;
+    player.pos.z=braceZ;
+    player.vel.x=0;
+    player.vel.z=0;
   }
+
   if(player.grounded&&!input.reel){
-    // 地上でAを押していない時は踏ん張る
     player.vel.x*=0.82;
     player.vel.z*=0.82;
   }else{
-    // A中・空中では摩擦をほぼゼロにする
     player.vel.x*=0.997;
     player.vel.z*=0.997;
   }
-  player.vel.y*=0.999;updateCamera(dt);updateAvatar();updateExternalCharacter(dt);updateWireLines();checkGoal();updateUI();renderer.render(scene,camera);requestAnimationFrame(animate)}
+  player.vel.y*=0.999;
+
+  updateCamera(dt);
+  updateAvatar();
+  updateExternalCharacter(dt);
+  updateWireLines();
+  checkGoal();
+  updateUI();
+  renderer.render(scene,camera);
+  requestAnimationFrame(animate);
+}
+
 function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}addEventListener('resize',resize);resize();reset();
 setTimeout(()=>{ if(loadStatus && !externalReady && !externalLoadFailed) loadStatus.textContent="3Dは起動済み。モデル読込中..."; }, 1200);
 animate();document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});document.addEventListener('contextmenu',e=>e.preventDefault(),{passive:false});
