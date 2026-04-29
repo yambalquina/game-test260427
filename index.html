@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>立体機動装置 Prototype 3D 横位置完全固定版</title>
+<title>立体機動装置 Prototype 3D 完全位置ロック版</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -606,7 +606,7 @@ function updateExternalCharacter(dt){
   }
 }
 
-const input={up:false,down:false,left:false,right:false,reel:false,release:false};let reelWasDown=false;let autoMode=false;const player={pos:new THREE.Vector3(0,60,0),vel:new THREE.Vector3(0,0,0),yaw:0,pitch:0,grounded:false,wires:{left:{hooked:false,point:new THREE.Vector3(),length:0},right:{hooked:false,point:new THREE.Vector3(),length:0}}};let startTime=performance.now(),clearTime=null,cleared=false;
+const input={up:false,down:false,left:false,right:false,reel:false,release:false};let reelWasDown=false;let braceLockActive=false;const braceLockPos=new THREE.Vector3();let reelWasDown=false;let braceLockActive=false;const braceLockPos=new THREE.Vector3();let autoMode=false;const player={pos:new THREE.Vector3(0,60,0),vel:new THREE.Vector3(0,0,0),yaw:0,pitch:0,grounded:false,wires:{left:{hooked:false,point:new THREE.Vector3(),length:0},right:{hooked:false,point:new THREE.Vector3(),length:0}}};let startTime=performance.now(),clearTime=null,cleared=false;
 function reset(){player.pos.set(0,80,0);player.vel.set(0,0,0);player.yaw=0;player.pitch=0;player.wires.left.hooked=false;player.wires.right.hooked=false;startTime=performance.now();clearTime=null;cleared=false;document.getElementById('clearText').style.display='none'}function respawn(){player.pos.set(0,360,0);player.vel.set(0,0,0);player.wires.left.hooked=false;player.wires.right.hooked=false}document.getElementById('resetBtn').onclick=reset;document.getElementById('respawnBtn').onclick=respawn;document.getElementById('modeBtn').onclick=()=>{autoMode=!autoMode;document.body.classList.toggle('auto',autoMode);document.getElementById('modeBtn').textContent=autoMode?'AUTO':'MANUAL'};
 function bind(id,key){const el=document.getElementById(id),on=e=>{e.preventDefault();input[key]=true},off=e=>{e.preventDefault();input[key]=false};['pointerdown','touchstart','mousedown'].forEach(ev=>el.addEventListener(ev,on,{passive:false}));['pointerup','pointercancel','touchend','touchcancel','mouseup','mouseleave'].forEach(ev=>el.addEventListener(ev,off,{passive:false}))}['up','down','left','right','reel','release'].forEach(v=>bind(v,v));
 document.addEventListener('keydown',e=>{if(e.key==='ArrowUp')input.up=true;if(e.key==='ArrowDown')input.down=true;if(e.key==='ArrowLeft')input.left=true;if(e.key==='ArrowRight')input.right=true;if(e.key.toLowerCase()==='a')input.reel=true;if(e.key.toLowerCase()==='b')input.release=true});document.addEventListener('keyup',e=>{if(e.key==='ArrowUp')input.up=false;if(e.key==='ArrowDown')input.down=false;if(e.key==='ArrowLeft')input.left=false;if(e.key==='ArrowRight')input.right=false;if(e.key.toLowerCase()==='a')input.reel=false;if(e.key.toLowerCase()==='b')input.release=false});
@@ -666,6 +666,11 @@ function shootWire(side,sx,sy){
   // 見た目は腰から射出、物理はキャラ中心で扱う。
   // そのズレを補正した中心基準の初期ワイヤー長。
   w.length=player.pos.distanceTo(centerEquivalentPoint);
+  if(!input.reel){
+    braceLockActive=true;
+    braceLockPos.copy(player.pos);
+    player.vel.set(0,0,0);
+  }
 }
 document.getElementById('tapLayer').addEventListener('pointerdown',e=>{if(e.target.id!=='tapLayer')return;e.preventDefault();shootWire(e.clientX<innerWidth/2?'left':'right',e.clientX,e.clientY)},{passive:false});
 function collide(){const radius=28;player.grounded=false;if(player.pos.y<60){player.pos.y=60;if(player.vel.y<0)player.vel.y=0;player.grounded=true}for(const b of solids){if(player.pos.y>b.h+80)continue;const insideX=player.pos.x>b.x-radius&&player.pos.x<b.x+b.w+radius,insideZ=player.pos.z>b.z-radius&&player.pos.z<b.z+b.d+radius;if(insideX&&insideZ&&player.pos.y<b.h+70){const left=Math.abs(player.pos.x-(b.x-radius)),right=Math.abs(player.pos.x-(b.x+b.w+radius)),front=Math.abs(player.pos.z-(b.z-radius)),back=Math.abs(player.pos.z-(b.z+b.d+radius)),min=Math.min(left,right,front,back);if(min===left){player.pos.x=b.x-radius;player.vel.x*=.25}else if(min===right){player.pos.x=b.x+b.w+radius;player.vel.x*=.25}else if(min===front){player.pos.z=b.z-radius;player.vel.z*=.25}else{player.pos.z=b.z+b.d+radius;player.vel.z*=.25}}if(player.pos.x>b.x-radius&&player.pos.x<b.x+b.w+radius&&player.pos.z>b.z-radius&&player.pos.z<b.z+b.d+radius&&player.pos.y<b.h+60&&player.pos.y>b.h-30&&player.vel.y<=0){player.pos.y=b.h+60;player.vel.y=0;player.grounded=true}}}
@@ -680,12 +685,9 @@ function applyWire(w,dt){
   const speed=player.vel.length();
 
   if(!input.reel){
-    // Aを押していない時は完全に物理無効。
-    // 張力・ゴム感・位置補正・速度補正なし。
     return;
   }
 
-  // Aを押している時だけ巻き取り。
   const elasticAllowance=Math.min(55,speed*0.75);
   const reelSpeed=26+Math.min(78,dist*.045);
   w.length=Math.max(60,w.length-reelSpeed);
@@ -896,8 +898,9 @@ function handleReelTakeoff(){
   const reelPressedNow=input.reel&&!reelWasDown;
 
   if(reelPressedNow&&hasWire){
-    // Aを押した瞬間に踏み切り。
-    // 地上・屋上なら上方向の初速を追加し、摩擦拘束から離脱する。
+    // Aを押した瞬間に位置ロック解除
+    braceLockActive=false;
+
     if(player.grounded){
       player.vel.y=Math.max(player.vel.y,8.5);
       player.grounded=false;
@@ -905,7 +908,6 @@ function handleReelTakeoff(){
       player.vel.y+=1.2;
     }
 
-    // アンカー方向へ初動を与える。
     const targets=[];
     if(player.wires.left.hooked)targets.push(player.wires.left.point);
     if(player.wires.right.hooked)targets.push(player.wires.right.point);
@@ -930,61 +932,51 @@ function animate(){
   const dt=Math.min(.033,clock.getDelta());
 
   const wireHeld=player.wires.left.hooked||player.wires.right.hooked;
-  const shouldBrace=wireHeld&&!input.reel;
-
-  // A未入力でワイヤーが刺さっている間は、横位置を保存して完全に踏ん張る。
-  // 速度を0にするだけだと、そのフレームの位置更新で微妙に滑るため、座標も戻す。
-  const braceX=player.pos.x;
-  const braceZ=player.pos.z;
 
   if(input.release){
     player.wires.left.hooked=false;
     player.wires.right.hooked=false;
     reelWasDown=input.reel;
+    braceLockActive=false;
   }
 
+  // ワイヤーが刺さっていてA未入力なら、現在位置で完全固定。
+  // ロック未作成ならその場を保存。
+  if(wireHeld&&!input.reel&&!braceLockActive){
+    braceLockActive=true;
+    braceLockPos.copy(player.pos);
+    player.vel.set(0,0,0);
+  }
+
+  // Aが押されたらロック解除＋踏み切り
   handleReelTakeoff();
 
-  if(shouldBrace){
-    player.vel.x=0;
-    player.vel.z=0;
-  }
-
-  player.vel.y-=14*dt;
-
-  applyWire(player.wires.left,dt);
-  applyWire(player.wires.right,dt);
-
-  if(shouldBrace){
-    player.vel.x=0;
-    player.vel.z=0;
-  }
-
-  const MAX_SPEED=95;
-  if(player.vel.length()>MAX_SPEED){
-    player.vel.setLength(MAX_SPEED);
-  }
-
-  player.pos.addScaledVector(player.vel,dt*60);
-  collide();
-
-  if(shouldBrace){
-    // 接地判定に依存せず、横方向だけ完全固定。
-    // 縦方向は重力・床判定を残す。
-    player.pos.x=braceX;
-    player.pos.z=braceZ;
-    player.vel.x=0;
-    player.vel.z=0;
-  }
-
-  if(player.grounded&&!input.reel){
-    player.vel.x*=0.82;
-    player.vel.z*=0.82;
+  if(braceLockActive&&!input.reel&&wireHeld){
+    player.pos.copy(braceLockPos);
+    player.vel.set(0,0,0);
   }else{
-    player.vel.x*=0.997;
-    player.vel.z*=0.997;
+    player.vel.y-=14*dt;
+
+    applyWire(player.wires.left,dt);
+    applyWire(player.wires.right,dt);
+
+    const MAX_SPEED=95;
+    if(player.vel.length()>MAX_SPEED){
+      player.vel.setLength(MAX_SPEED);
+    }
+
+    player.pos.addScaledVector(player.vel,dt*60);
+    collide();
+
+    if(player.grounded&&!input.reel){
+      player.vel.x*=0.82;
+      player.vel.z*=0.82;
+    }else{
+      player.vel.x*=0.997;
+      player.vel.z*=0.997;
+    }
+    player.vel.y*=0.999;
   }
-  player.vel.y*=0.999;
 
   updateCamera(dt);
   updateAvatar();
