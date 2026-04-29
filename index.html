@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>立体機動装置 Prototype 3D 完全位置ロック版</title>
+<title>立体機動装置 Prototype 3D クリープ原因切り分け版</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -590,257 +590,19 @@ function applyBaseCombatStance(model){
 
 function updateExternalCharacter(dt){
   if(!externalCharacter) return;
-  const raw = externalCharacter.children && externalCharacter.children[0];
-  // orientation test: pose disabled until upright confirmed
+
+  const wireHeld=player.wires.left.hooked||player.wires.right.hooked;
+  const shouldFreezeModel=wireHeld&&!input.reel;
 
   externalCharacter.position.copy(player.pos);
-
-  // 足元をプレイヤー接地点へ合わせる
   externalCharacter.position.y = player.pos.y - 50;
-
-  // 向き補正。逆向きなら + Math.PI を外す
   externalCharacter.rotation.y = player.yaw + Math.PI;
 
-  if(externalMixer){
+  // A未入力でワイヤー保持中はGLBアニメも停止。
+  // player.posを固定してもクリープする場合、Idleアニメのroot/hips移動が原因の可能性が高い。
+  if(externalMixer && !shouldFreezeModel){
     externalMixer.update(dt);
   }
-}
-
-const input={up:false,down:false,left:false,right:false,reel:false,release:false};let reelWasDown=false;let braceLockActive=false;const braceLockPos=new THREE.Vector3();let reelWasDown=false;let braceLockActive=false;const braceLockPos=new THREE.Vector3();let autoMode=false;const player={pos:new THREE.Vector3(0,60,0),vel:new THREE.Vector3(0,0,0),yaw:0,pitch:0,grounded:false,wires:{left:{hooked:false,point:new THREE.Vector3(),length:0},right:{hooked:false,point:new THREE.Vector3(),length:0}}};let startTime=performance.now(),clearTime=null,cleared=false;
-function reset(){player.pos.set(0,80,0);player.vel.set(0,0,0);player.yaw=0;player.pitch=0;player.wires.left.hooked=false;player.wires.right.hooked=false;startTime=performance.now();clearTime=null;cleared=false;document.getElementById('clearText').style.display='none'}function respawn(){player.pos.set(0,360,0);player.vel.set(0,0,0);player.wires.left.hooked=false;player.wires.right.hooked=false}document.getElementById('resetBtn').onclick=reset;document.getElementById('respawnBtn').onclick=respawn;document.getElementById('modeBtn').onclick=()=>{autoMode=!autoMode;document.body.classList.toggle('auto',autoMode);document.getElementById('modeBtn').textContent=autoMode?'AUTO':'MANUAL'};
-function bind(id,key){const el=document.getElementById(id),on=e=>{e.preventDefault();input[key]=true},off=e=>{e.preventDefault();input[key]=false};['pointerdown','touchstart','mousedown'].forEach(ev=>el.addEventListener(ev,on,{passive:false}));['pointerup','pointercancel','touchend','touchcancel','mouseup','mouseleave'].forEach(ev=>el.addEventListener(ev,off,{passive:false}))}['up','down','left','right','reel','release'].forEach(v=>bind(v,v));
-document.addEventListener('keydown',e=>{if(e.key==='ArrowUp')input.up=true;if(e.key==='ArrowDown')input.down=true;if(e.key==='ArrowLeft')input.left=true;if(e.key==='ArrowRight')input.right=true;if(e.key.toLowerCase()==='a')input.reel=true;if(e.key.toLowerCase()==='b')input.release=true});document.addEventListener('keyup',e=>{if(e.key==='ArrowUp')input.up=false;if(e.key==='ArrowDown')input.down=false;if(e.key==='ArrowLeft')input.left=false;if(e.key==='ArrowRight')input.right=false;if(e.key.toLowerCase()==='a')input.reel=false;if(e.key.toLowerCase()==='b')input.release=false});
-function forwardVector(){return new THREE.Vector3(Math.sin(player.yaw)*Math.cos(player.pitch),Math.sin(player.pitch),Math.cos(player.yaw)*Math.cos(player.pitch)).normalize()}
-function shootWire(side,sx,sy){
-  const ndc=new THREE.Vector2((sx/innerWidth)*2-1,-(sy/innerHeight)*2+1);
-  const raycaster=new THREE.Raycaster();
-  raycaster.setFromCamera(ndc,camera);
-  raycaster.far=8000;
-
-  let hit=null;
-
-  // 建物本体を最優先で判定。窓・装飾・道路などを先に拾う問題を回避する。
-  if(typeof hookTargets!=='undefined' && hookTargets.length>0){
-    const buildingHits=raycaster.intersectObjects(hookTargets,false);
-    hit=buildingHits.find(h=>h.distance>40);
-  }
-
-  // 建物に当たらなかった場合だけ他オブジェクトへフォールバック
-  if(!hit){
-    const objects=[];
-    scene.traverse(o=>{
-      if(
-        o.isMesh &&
-        o!==ground &&
-        o.parent!==playerGroup &&
-        !o.userData?.isPlayerModel
-      ){
-        objects.push(o);
-      }
-    });
-    const hits=raycaster.intersectObjects(objects,true);
-    hit=hits.find(h=>h.distance>70);
-  }
-
-  // 救済として地面も候補
-  if(!hit){
-    const gh=raycaster.intersectObject(ground);
-    hit=gh.find(h=>h.distance>70);
-  }
-
-  if(!hit)return;
-
-  const f=forwardVector();
-  const toHit=hit.point.clone().sub(player.pos).normalize();
-
-  // ほぼ真横・後方だけ除外。上階狙いをしやすくするため緩める。
-  if(f.dot(toHit)<0.01)return;
-
-  const w=player.wires[side];
-  w.hooked=true;
-  w.point.copy(hit.point);
-  const visualOrigin=getWireOrigin(side);
-  const centerToOrigin=visualOrigin.clone().sub(player.pos);
-  const centerEquivalentPoint=hit.point.clone().sub(centerToOrigin);
-
-  // 見た目は腰から射出、物理はキャラ中心で扱う。
-  // そのズレを補正した中心基準の初期ワイヤー長。
-  w.length=player.pos.distanceTo(centerEquivalentPoint);
-  if(!input.reel){
-    braceLockActive=true;
-    braceLockPos.copy(player.pos);
-    player.vel.set(0,0,0);
-  }
-}
-document.getElementById('tapLayer').addEventListener('pointerdown',e=>{if(e.target.id!=='tapLayer')return;e.preventDefault();shootWire(e.clientX<innerWidth/2?'left':'right',e.clientX,e.clientY)},{passive:false});
-function collide(){const radius=28;player.grounded=false;if(player.pos.y<60){player.pos.y=60;if(player.vel.y<0)player.vel.y=0;player.grounded=true}for(const b of solids){if(player.pos.y>b.h+80)continue;const insideX=player.pos.x>b.x-radius&&player.pos.x<b.x+b.w+radius,insideZ=player.pos.z>b.z-radius&&player.pos.z<b.z+b.d+radius;if(insideX&&insideZ&&player.pos.y<b.h+70){const left=Math.abs(player.pos.x-(b.x-radius)),right=Math.abs(player.pos.x-(b.x+b.w+radius)),front=Math.abs(player.pos.z-(b.z-radius)),back=Math.abs(player.pos.z-(b.z+b.d+radius)),min=Math.min(left,right,front,back);if(min===left){player.pos.x=b.x-radius;player.vel.x*=.25}else if(min===right){player.pos.x=b.x+b.w+radius;player.vel.x*=.25}else if(min===front){player.pos.z=b.z-radius;player.vel.z*=.25}else{player.pos.z=b.z+b.d+radius;player.vel.z*=.25}}if(player.pos.x>b.x-radius&&player.pos.x<b.x+b.w+radius&&player.pos.z>b.z-radius&&player.pos.z<b.z+b.d+radius&&player.pos.y<b.h+60&&player.pos.y>b.h-30&&player.vel.y<=0){player.pos.y=b.h+60;player.vel.y=0;player.grounded=true}}}
-function applyWire(w,dt){
-  if(!w.hooked)return;
-
-  const toPlayer=player.pos.clone().sub(w.point);
-  const dist=toPlayer.length();
-  if(dist<1)return;
-
-  const n=toPlayer.clone().normalize();
-  const speed=player.vel.length();
-
-  if(!input.reel){
-    return;
-  }
-
-  const elasticAllowance=Math.min(55,speed*0.75);
-  const reelSpeed=26+Math.min(78,dist*.045);
-  w.length=Math.max(60,w.length-reelSpeed);
-
-  const effectiveLength=w.length+elasticAllowance*.12;
-
-  if(dist>effectiveLength){
-    const excess=dist-effectiveLength;
-
-    player.pos.addScaledVector(n,-excess*.78);
-
-    const radial=player.vel.dot(n);
-    if(radial>0){
-      player.vel.addScaledVector(n,-radial*.88);
-    }
-
-    const tension=38+Math.min(90,excess*.34);
-    player.vel.addScaledVector(n,-tension*dt*60);
-
-    const tangent=player.vel.clone().addScaledVector(n,-player.vel.dot(n));
-    const tLen=tangent.length();
-    if(tLen>0.1){
-      player.vel.addScaledVector(tangent.normalize(),Math.min(1.15,tLen*.014));
-    }
-  }
-
-  const pull=14+Math.min(44,dist*.022);
-  player.vel.addScaledVector(n,-pull*dt*60);
-}
-
-function updateCamera(dt){if(autoMode){const dx=goalX-player.pos.x,dz=goalZ-player.pos.z,targetYaw=Math.atan2(dx,dz);let diff=targetYaw-player.yaw;while(diff>Math.PI)diff-=Math.PI*2;while(diff<-Math.PI)diff+=Math.PI*2;player.yaw+=diff*.05;const dist=Math.hypot(dx,dz),targetPitch=THREE.MathUtils.clamp(Math.atan2(160-player.pos.y,dist)+.05,-.55,.55);player.pitch+=(targetPitch-player.pitch)*.04}else{if(input.left)player.yaw+=1.8*dt;if(input.right)player.yaw-=1.8*dt;if(input.up)player.pitch+=1.2*dt;if(input.down)player.pitch-=1.2*dt;player.pitch=THREE.MathUtils.clamp(player.pitch,-1.2,1.2)}const f=forwardVector(),target=player.pos.clone().add(new THREE.Vector3(0,40,0)),camPos=target.clone().addScaledVector(f,-230).add(new THREE.Vector3(0,80,0));camera.position.lerp(camPos,.22);camera.lookAt(target.clone().addScaledVector(f,180))}
-function updateAvatar(){
-  playerGroup.position.copy(player.pos);
-  playerGroup.rotation.y=player.yaw+Math.PI;
-// レスリング構えの前傾を全身で表現するため、骨盤起点でキャラ全体を前に倒す
-playerGroup.rotation.x=0.22;
-
-  const hasWire=player.wires.left.hooked||player.wires.right.hooked;
-  const reeling=input.reel&&hasWire;
-  const falling=!player.grounded&&player.vel.y<-1.0;
-  const rising=!player.grounded&&player.vel.y>1.0;
-  const speed=player.vel.length();
-  const time=performance.now()*0.006;
-
-  // Base: wrestling stance.
-  // 高腰、股関節から前傾、膝は深く落としすぎない。
-  const target={
-    spineX:.18,chestX:.24,chestZ:0,pelvisZ:0,headX:-.10,
-    lArmX:.70,rArmX:.70,lArmZ:-.32,rArmZ:.32,
-    lElbowX:-.28,rElbowX:-.28,lWristX:.06,rWristX:.06,
-    lLegX:-.18,rLegX:-.18,lLegZ:.12,rLegZ:-.12,
-    lKneeX:.46,rKneeX:.46,lAnkleX:-.10,rAnkleX:-.10
-  };
-
-  if(player.grounded){
-    // 構え中の小さな重心移動
-    target.chestZ=Math.sin(time)*.018;
-    target.pelvisZ=-Math.sin(time)*.010;
-    target.lArmX+=Math.sin(time)*.035;
-    target.rArmX-=Math.sin(time)*.035;
-  }
-
-  if(reeling){
-    // 巻き取り: レスリング構えからさらに前傾。
-    // 肘は体側へ引き、肩は前方、腰は高く残す。
-    target.spineX=.28;
-    target.chestX=.38;
-    target.headX=-.14;
-    target.lArmX=1.05;
-    target.rArmX=1.05;
-    target.lArmZ=-.34;
-    target.rArmZ=.34;
-    target.lElbowX=-.52;
-    target.rElbowX=-.52;
-    target.lWristX=.10;
-    target.rWristX=.10;
-    target.lLegX=-.22;
-    target.rLegX=-.18;
-    target.lLegZ=.16;
-    target.rLegZ=-.16;
-    target.lKneeX=.54;
-    target.rKneeX=.50;
-    target.lAnkleX=-.14;
-    target.rAnkleX=-.14;
-  }else if(falling){
-    // 落下: 前傾は残しつつ、腕でバランスを取る。
-    target.spineX=.10;
-    target.chestX=.16;
-    target.headX=-.06;
-    target.lArmX=.56;
-    target.rArmX=.56;
-    target.lArmZ=-.68;
-    target.rArmZ=.68;
-    target.lElbowX=-.08;
-    target.rElbowX=-.08;
-    target.lLegX=-.24;
-    target.rLegX=-.26;
-    target.lLegZ=.24;
-    target.rLegZ=-.24;
-    target.lKneeX=.42;
-    target.rKneeX=.38;
-  }else if(rising){
-    // 上昇: 構えから脚をやや伸ばす。肩は高めを維持。
-    target.spineX=.08;
-    target.chestX=.12;
-    target.headX=-.04;
-    target.lArmX=.82;
-    target.rArmX=.82;
-    target.lArmZ=-.30;
-    target.rArmZ=.30;
-    target.lElbowX=-.06;
-    target.rElbowX=-.06;
-    target.lLegX=-.32;
-    target.rLegX=-.24;
-    target.lKneeX=.34;
-    target.rKneeX=.30;
-  }else if(speed>12&&!player.grounded){
-    // 高速滑空: レスリング前傾を空中姿勢に変換。
-    target.spineX=.18;
-    target.chestX=.26;
-    target.lArmX=.44;
-    target.rArmX=.44;
-    target.lArmZ=-.55;
-    target.rArmZ=.55;
-    target.lElbowX=-.06;
-    target.rElbowX=-.06;
-    target.lLegX=-.18;
-    target.rLegX=-.20;
-    target.lKneeX=.28;
-    target.rKneeX=.26;
-  }
-
-  smoothAvatar(target,reeling?.22:.15);
-
-  rig.spine.rotation.x=avatarAnim.spineX;
-  rig.chest.rotation.x=avatarAnim.chestX;
-  rig.chest.rotation.z=avatarAnim.chestZ;
-  rig.pelvis.rotation.z=avatarAnim.pelvisZ;
-  rig.head.rotation.x=avatarAnim.headX;
-
-  rig.lShoulder.rotation.set(avatarAnim.lArmX,0,avatarAnim.lArmZ);
-  rig.rShoulder.rotation.set(avatarAnim.rArmX,0,avatarAnim.rArmZ);
-  rig.lElbow.rotation.x=avatarAnim.lElbowX;
-  rig.rElbow.rotation.x=avatarAnim.rElbowX;
-  rig.lWrist.rotation.x=avatarAnim.lWristX;
-  rig.rWrist.rotation.x=avatarAnim.rWristX;
-
-  rig.lHip.rotation.set(avatarAnim.lLegX,0,avatarAnim.lLegZ);
-  rig.rHip.rotation.set(avatarAnim.rLegX,0,avatarAnim.rLegZ);
-  rig.lKnee.rotation.x=avatarAnim.lKneeX;
-  rig.rKnee.rotation.x=avatarAnim.rKneeX;
-  rig.lAnkle.rotation.x=avatarAnim.lAnkleX;
-  rig.rAnkle.rotation.x=avatarAnim.rAnkleX;
 }
 
 function getWireOrigin(side){
@@ -978,7 +740,11 @@ function animate(){
     player.vel.y*=0.999;
   }
 
-  updateCamera(dt);
+  if(braceLockActive&&!input.reel&&(player.wires.left.hooked||player.wires.right.hooked)){
+    // ロック中はカメラも更新しない。まだ動くなら見た目アニメ側。
+  }else{
+    updateCamera(dt);
+  }
   updateAvatar();
   updateExternalCharacter(dt);
   updateWireLines();
