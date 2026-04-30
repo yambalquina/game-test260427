@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>立体機動装置 Prototype 3D クリープ原因切り分け版</title>
+<title>立体機動装置 Prototype 3D デバッグ表示版</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -41,6 +41,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 </head>
 <body>
 <canvas id="game"></canvas>
+<div id="debugPanel" style="
+position:fixed;
+left:8px;
+top:8px;
+z-index:9999;
+background:rgba(0,0,0,.68);
+color:#00ff77;
+font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+font-size:11px;
+line-height:1.35;
+padding:8px 9px;
+border-radius:8px;
+pointer-events:none;
+white-space:nowrap;
+text-shadow:0 1px 2px #000;
+">DEBUG</div>
 <div id="loadStatus">3D読み込み中...</div><div id="tapLayer"></div>
 <div class="mode"><button id="modeBtn">MANUAL</button></div><div class="system"><button id="resetBtn">リセット</button><button id="respawnBtn">リスポーン</button></div>
 <div class="hud"><div id="timeText">T:0.00</div><div id="heightText">H:0</div><div id="speedText">S:0</div><div id="wireText">L:OFF / R:OFF</div><div id="stateText">GROUND</div></div>
@@ -57,7 +73,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 <script type="module">
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-const canvas=document.getElementById('game');const loadStatus=document.getElementById('loadStatus');const renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const canvas=document.getElementById('game');const debugPanel=document.getElementById('debugPanel');const loadStatus=document.getElementById('loadStatus');const renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x8ed0ff);scene.fog=new THREE.Fog(0xbfe6ff,1200,4800);const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,9000);const clock=new THREE.Clock();
 scene.add(new THREE.HemisphereLight(0xffffff,0x6b7a55,1.2));const sun=new THREE.DirectionalLight(0xffffff,1.6);sun.position.set(900,1600,700);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.near=50;sun.shadow.camera.far=5000;sun.shadow.camera.left=-2200;sun.shadow.camera.right=2200;sun.shadow.camera.top=2200;sun.shadow.camera.bottom=-2200;scene.add(sun);
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(12000,12000),new THREE.MeshStandardMaterial({color:0x74a85d,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
@@ -690,6 +706,33 @@ function handleReelTakeoff(){
 }
 
 function checkGoal(){if(cleared)return;const d=Math.hypot(player.pos.x-goalX,player.pos.z-goalZ);if(d<160&&player.pos.y<430){cleared=true;clearTime=(performance.now()-startTime)/1000;rankText.textContent='TIME '+clearTime.toFixed(2)+' / RANK '+getRank(clearTime);clearText.style.display='block'}}
+
+function fmtVec(v){
+  if(!v) return "null";
+  return `${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}`;
+}
+
+function updateDebugPanel(){
+  if(!debugPanel) return;
+
+  const p = player && player.pos ? player.pos : null;
+  const v = player && player.vel ? player.vel : null;
+  const c = camera ? camera.position : null;
+  const e = externalCharacter ? externalCharacter.position : null;
+
+  const wireHeld = player.wires.left.hooked || player.wires.right.hooked;
+  const lockText = (typeof braceLockActive !== "undefined") ? braceLockActive : "NA";
+
+  debugPanel.innerHTML =
+    `POS&nbsp; ${fmtVec(p)}<br>` +
+    `VEL&nbsp; ${fmtVec(v)}<br>` +
+    `CAM&nbsp; ${fmtVec(c)}<br>` +
+    `EXT&nbsp; ${fmtVec(e)}<br>` +
+    `WIRE L:${player.wires.left.hooked ? "1" : "0"} R:${player.wires.right.hooked ? "1" : "0"} HELD:${wireHeld ? "1" : "0"}<br>` +
+    `REEL:${input.reel ? "1" : "0"} RELEASE:${input.release ? "1" : "0"} LOCK:${lockText}<br>` +
+    `GROUND:${player.grounded ? "1" : "0"}`;
+}
+
 function animate(){
   const dt=Math.min(.033,clock.getDelta());
 
@@ -750,6 +793,7 @@ function animate(){
   updateWireLines();
   checkGoal();
   updateUI();
+  updateDebugPanel();
   renderer.render(scene,camera);
   requestAnimationFrame(animate);
 }
